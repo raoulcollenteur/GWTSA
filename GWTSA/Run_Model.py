@@ -18,9 +18,9 @@ forcing = 'Test_Data/KNMI_Bilt'
  
 Timeserie = Model(bore, forcing, rows=[1,8])
 
-X0 = {'A': 400,'a': 10, 'n': 1.35,'Alpha': 50, 'S_cap': 0.0, 'K_sat':-3, 'Beta': 2.0, 'D': -3, 'f': 0.8} # initial parameters
+X0 = {'A': 400,'a': 10, 'n': 1.35,'Alpha': 10, 'S_cap': 0.0, 'K_sat':-3, 'Beta': 2.0, 'D': -3, 'f': 0.8} # initial parameters
 
-Timeserie.solve('TFN4', X0, Opt = 1, Cor = 0)
+Timeserie.solve('TFN4', X0, Opt = 0, Cor = 0)
 
 Timeserie.plot_heads('r')
 
@@ -32,9 +32,10 @@ Timeserie.plot_heads('r')
 #Timeserie.plot_forcings()
 
 ''' Optimal parameter set
-# (A, a, n, d, Alpha, S_cap, K_sat, Beta, D)
-Parameters = [400.0, 10.0, 1.35, 7.0, 50.0, 0.0, -3.0, 2.0, -3.0]
-'''
+# (A, a, n, d, Alpha, S_cap, K_sat, Beta, D)'''
+Parameters = [400.0, 10.0, 1.35, 7.0, 10.0, 0.0, -3.0, 2.0, -3.0]
+
 
 #Check EVP calculation? Explained Variance Percentage is: None
 
+Timeserie.test(Parameters, 'TFN4')
