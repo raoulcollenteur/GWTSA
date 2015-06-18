@@ -12,7 +12,6 @@ from Unsat_Zone import percolation
 from TFN_Model import TFN4
 from datetime import date
 
-
 print 'Import of packages succesfull!'
 #plt.close('all')
 

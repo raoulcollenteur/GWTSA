@@ -42,7 +42,7 @@ cdef inline double c_max(double a, double b): return a if a >= b else b
 cdef inline double c_min(double a, double b): return a if a <= b else b
 
 
-def percolation(np.ndarray[np.int_t] Time_Model, np.ndarray[np.float_t, ndim=1] P, np.ndarray[np.float_t, ndim=1] E, double S_cap = 1.0, double K_sat = -1.5, double Beta = 2.0, double D = -3, int dt = 1, int solver = 0):
+def percolation(np.ndarray[np.int_t] Time_Model, np.ndarray[np.float_t, ndim=1] P, np.ndarray[np.float_t, ndim=1] Ep, double S_cap = 1.0, double K_sat = -1.5, double Beta = 2.0, double Imax = -3, int dt = 1, int solver = 0):
     
     cdef int t, iteration, bisection, n
     cdef double error, Last_S, g, g_derivative, a, b, c
@@ -51,26 +51,34 @@ def percolation(np.ndarray[np.int_t] Time_Model, np.ndarray[np.float_t, ndim=1] 
 
     K_sat = 10.0**K_sat
     S_cap = 10.0**S_cap
-    D = 10.0**D
+    Imax = 10.0**Imax
     error = 1.0e-5
     
     # Create an empty array to store the soil state in
     cdef np.ndarray[np.float_t] S = np.zeros(n)
     S[0] = 0.5 * S_cap   #Set the initial system state
+    cdef np.ndarray[np.float_t] Si = np.zeros(n)
+    Si[0] = 0.0
+    cdef np.ndarray[np.float_t] Pe = np.zeros(n)
+    Pe[0] = 0.0    
+    cdef np.ndarray[np.float_t] Ei = np.zeros(n)
+    Ei[0] = 0.0  
     
-    # Calculate the interception, minimum of P, E or D
-    cdef np.ndarray[np.float_t] D1 = np.ones(n) * D # Create an array for element-wise comparison
-    cdef np.ndarray[np.float_t] I = np.amin([P,D1,E], axis = 0)
-    cdef np.ndarray[np.float_t] Ei = E - I # Update the amount of potential evaporation
-
     for t in range(n-1):
-        #assert S[t] <= S_cap, 'Error, soil is saturated and overland flow will occur S[t], K_sat, S_cap, Beta, D^= %r,' % [S[t], K_sat, S_cap, Beta, D, t]
+        Si[t+1] = Si[t] + P[t+1]                # Fill interception bucket with new rain
+        Pe[t+1] = c_max(0.0, Si[t+1] - Imax)    # Calculate effective precipitation
+        Si[t+1] = Si[t+1] - Pe[t+1]             
+        Ei[t+1] = c_min(Si[t+1], Ep[t+1])       # Evaporation from interception
+        Si[t+1] = Si[t+1] - Ei[t+1]             # Update interception state
+        Ep[t+1] = Ep[t+1] - Ei[t+1]             # Update potential evapotranspiration    
+    
         Last_S = S[t]
         iteration = 0
         bisection = 1
         #Use explicit Euler scheme to find an initial estimate for the newton raphson-method
         
-        S[t+1] = c_max(0.0, S[t] + dt * ( (P[t]-I[t]) - K_sat * (S[t] / S_cap)**Beta - Ei[t] * c_min(1.0, (S[t] / (0.5 * S_cap)) )))
+        S[t+1] = c_max(0.0, S[t] + dt * ( Pe[t] - K_sat * (S[t] / S_cap)**Beta - Ep[t] * c_min(1.0, (S[t] / (0.5 * S_cap)) )))
+        
         if solver == 1:
             #Start the while loop for the newton-Raphson iteration   
             while abs(Last_S - S[t+1]) > error:
@@ -79,12 +87,12 @@ def percolation(np.ndarray[np.int_t] Time_Model, np.ndarray[np.float_t, ndim=1] 
                 iteration += 1
                 Last_S = S[t+1]      
            
-                g = Last_S - S[t] - dt *( (P[t]-I[t]) - K_sat * (Last_S / S_cap)**Beta - Ei[t] * c_min(1, (Last_S / (0.5 * S_cap))) )       
+                g = Last_S - S[t] - dt *( Pe[t] - K_sat * (Last_S / S_cap)**Beta - Ep[t] * c_min(1, (Last_S / (0.5 * S_cap))) )       
                 # Derivative depends on the state of the system
                 if Last_S > (0.5 * S_cap):
                     g_derivative = 1.0 - dt * ( -Beta * K_sat * (Last_S / S_cap)**(Beta-1))
                 else:        
-                    g_derivative = 1.0 - dt * ( -Beta * K_sat * (Last_S / S_cap)**(Beta-1) - Ei[t] * (0.5 * S_cap) ) 
+                    g_derivative = 1.0 - dt * ( -Beta * K_sat * (Last_S / S_cap)**(Beta-1) - Ep[t] * (0.5 * S_cap) ) 
                 
                 # Check if there is no zero-division error            
                 if np.isnan(g / g_derivative):
@@ -106,9 +114,9 @@ def percolation(np.ndarray[np.int_t] Time_Model, np.ndarray[np.float_t, ndim=1] 
                         break   
                     iteration += 1 #increase the number of iterations by 1
     
-                    if (c - S[t] - dt *( (P[t]-I[t]) - K_sat * (c / S_cap)**Beta - Ei[t] * c_min(1, (c / (0.5 * S_cap))) )) == 0.0:
+                    if (c - S[t] - dt *( Pe[t] - K_sat * (c / S_cap)**Beta - Ep[t] * c_min(1, (c / (0.5 * S_cap))) )) == 0.0:
                         return c # Return the current value if it is correct
-                    elif (a - S[t] - dt *( (P[t]-I[t]) - K_sat * (a / S_cap)**Beta - Ei[t] * c_min(1.0, (a / (0.5 * S_cap))) )) * (c - S[t] - dt *( (P[t]-I[t]) - K_sat * (c / S_cap)**Beta - Ei[t] * c_min(1.0, (c / (0.5 * S_cap))) )) > 0.0 :
+                    elif (a - S[t] - dt *( Pe[t] - K_sat * (a / S_cap)**Beta - Ep[t] * c_min(1.0, (a / (0.5 * S_cap))) )) * (c - S[t] - dt *( Pe[t] - K_sat * (c / S_cap)**Beta - Ep[t] * c_min(1.0, (c / (0.5 * S_cap))) )) > 0.0 :
                         b = c
                     else : 
                         a = c
