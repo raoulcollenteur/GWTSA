@@ -13,31 +13,31 @@ from TFN_Model import TFN4
 from datetime import date
 
 print 'Import of packages succesfull!'
-#plt.close('all')
+plt.close('all')
 
-Bore = 'Test_Data/B27B0081-001' # For Time Data to make realistic test series
+Bore = 'Test_Data/GW_Levels' # For Time Data to make realistic test series
 forcing = 'Test_Data/KNMI_Bilt'
 
 # (A, a, n, d, Alpha, S_cap, K_sat, Beta, D)
-Parameters = [400.0, 10.0, 1.35, 7.0, 10.0, 0.0, -3.0, 2.0, -3.0]
+Parameters = [2.6, 10.0, 1.35, 7.0, 1.0, 0.0, -3.0, 2.0, -3.0]
 TFN = 'TFN4' #TFN-model to use
 
-Bore1 = Model(Bore, forcing)
+Bore1 = Model(Bore, forcing, rows=[1,8])
 
 # Unpack all the parameters that should be calibrated
-A = Parameters[0]
+A = 10**Parameters[0]
 a = Parameters[1]
 n = Parameters[2]
 d = Parameters[3]
-Alpha = Parameters[4]
+Alpha = 10**Parameters[4]
 S_cap = Parameters[5]
 K_sat = Parameters[6]
 Beta = Parameters [7]
-D = Parameters[8]
+Imax = Parameters[8]
 dt= 1 
 
 #Recharge model 
-R = percolation(Bore1.Time_Model, Bore1.P, Bore1.E, S_cap, K_sat, Beta, D , dt, solver = 1)[0]
+R = percolation(Bore1.Time_Model, Bore1.P, Bore1.E, S_cap, K_sat, Beta, Imax , dt, solver = 1)[0]
 
 #plt.plot((Bore1.P-Bore1.E))
 #plt.plot(R, 'r')
@@ -49,7 +49,7 @@ Fb = Fs[1:] - Fs[0:-1] #block reponse function
 H = d + np.convolve(R,Fb)
 
 np.random.seed(22)
-r = 0.005 * np.random.standard_normal(len(Bore1.Time_Model)) # Residuals
+r = 0.00 * np.random.standard_normal(len(Bore1.Time_Model)) # Residuals
 NM = np.exp(-Bore1.Time_Model/Alpha) #Noise Model
 e = np.convolve(r,NM)
 Ho = H[0:len(Bore1.Time_Model)] + e[0:len(Bore1.Time_Model)]
@@ -69,10 +69,10 @@ for i in range(len(Time)):
     
 X = zip(Time,Ho)   
 
-np.savetxt('testserie.txt', X, header='[400.0, 10.0, 1.35, 7.0, 50.0, 0.0, -3.0, 2.0, -3.0]', fmt = '%s', delimiter = ',', newline = '\r\n')
+np.savetxt('Test_Data/GW_Levels.txt', X, header='[400.0, 10.0, 1.35, 7.0, 50.0, 0.0, -3.0, 2.0, -3.0]', fmt = '%s', delimiter = ',', newline = '\r\n')
     
-Hm = Bore1.test(Parameters, 'TFN4')
-plt.plot(Hm,'r')
+Hm = Bore1.simulate(Parameters, 'TFN4')
+Bore1.plot_heads(newfig = 0)
 
 #R1 = percolation(Bore1.Time_Model, Bore1.P, Bore1.E, S_cap, K_sat, Beta, D , dt)
 #R2 = percolation(Bore1.Time_Model, Bore1.P, Bore1.E, S_cap, K_sat, Beta, D , dt)

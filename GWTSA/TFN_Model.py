@@ -124,15 +124,15 @@ def TFN3(Parameters,InputData):
     
 def TFN4(Parameters,InputData, solver = 0):
     # Unpack all the parameters that should be calibrated
-    A = Parameters[0]
+    A = 10**Parameters[0]
     a = Parameters[1]
     n = Parameters[2]
     d = Parameters[3]
-    Alpha = 15 #Parameters[4]
+    Alpha = 10**Parameters[4]
     S_cap = Parameters[5]
     K_sat = Parameters[6]
     Beta = Parameters [7]
-    D = Parameters[8]
+    Imax = Parameters[8]
     
     # unpack all the data that is needed for the simulation
     Time_Model = InputData[1]
@@ -146,7 +146,7 @@ def TFN4(Parameters,InputData, solver = 0):
     dt= 1 
   
     #Recharge model
-    R = percolation(Time_Model, P, E, S_cap, K_sat, Beta, D , dt, solver = 0)[0]
+    R = percolation(Time_Model, P, E, S_cap, K_sat, Beta, Imax , dt, solver = 0)[0]
     
     # Set the value for the timestep to calculate the innovations
     Fs = A * gammainc(n,Time_Model/a) # Step response function based on pearsonIII

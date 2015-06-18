@@ -40,7 +40,7 @@ class Model:
         input files for the observed heads and the forcings should look.
         
         """
-        Ho = np.genfromtxt(('./%s.txt' % (bore)), delimiter=',', skiprows=5, usecols=[0, 1], converters={0: md.strpdate2num('%Y%m%d')});
+        Ho = np.genfromtxt(('./%s.txt' % (bore)), delimiter=',', skiprows=rows[0], usecols=[0, 1], converters={0: md.strpdate2num('%Y%m%d')});
         Ho = Ho[Ho[:,1] > -999] #Select only real values
         self.Time_Begin = Ho[0,0] #In time number, not date
         self.Time_End = Ho[-1,0] #In time number, not date
@@ -52,7 +52,7 @@ class Model:
         self.Time_Start = 2000; #warmup time of the model [Days]
                
         # Import the precipitation and evaporation data and calculate the recharge
-        ClimateData = np.genfromtxt('./%s.txt' % forcing , delimiter=',', skiprows=8, converters={1: md.datestr2num}, usecols=[1,2,3]);
+        ClimateData = np.genfromtxt('./%s.txt' % forcing , delimiter=',', skiprows=rows[1], converters={1: md.datestr2num}, usecols=[1,2,3]);
         ClimateData = ClimateData[:,:][(ClimateData[:,0] >= self.Time_Begin) & (ClimateData[:,0] <= self.Time_End)]
         self.P = ClimateData[:,1] / 10000.0 # divided by 10000 to make it in meters
         self.P[self.P < 0.0] = 0.0
@@ -107,7 +107,7 @@ class Model:
         if Opt == 0:
             self.Parameters = fmin(self.SWSI, self.Initial_Parameters, args= (InputData,), maxiter= 1000 )      
         elif Opt == 1: 
-            res = cma.fmin(self.SWSI, self.Initial_Parameters, 0.5, args=(InputData,), options={'ftarget': 1e-1})
+            res = cma.fmin(self.SWSI, self.Initial_Parameters, 0.5, args=(InputData,), options={'ftarget': 1e-5})
             self.Parameters = res[0]
 
         [self.head_modeled, self.Innovations] = self.TFN(self.Parameters, InputData); #model the GWL
@@ -131,7 +131,7 @@ class Model:
         TFN = InputData[0]
         innovation = TFN(Parameters, InputData, solver = 0)[1]
         N = len(innovation)
-        alpha = Parameters[4]
+        alpha = 10**Parameters[4]
         dt = InputData[6][-N:]
         x = np.exp(sum(np.log(1 - np.exp(-2.0  / alpha * dt)))*(1.0/N))
         SWSI = sum( (x / (1 - np.exp(-2.0 / alpha * dt ))) * innovation**2)
@@ -156,18 +156,17 @@ class Model:
 
 # the test function is sometimes helpfull when you have parameter set and want to see what the modeled heads will result in. This function is experimental. You need to run a model first..    
 
-    def test(self, Xt, TFN):
+    def simulate(self, Xt, TFN):
         self.TFN = getattr(TFN_Model, TFN)   
         InputData = [self.TFN, self.Time_Model, self.P, self.E, self.Head_Observed, self.Time_Observed, self.Time_Steps, self.Time_Start] 
-        self.head_modeled = self.TFN(Xt, InputData)[0]; #model the GWL
-        return self.head_modeled
-        
-        
+        self.head_modeled, self.Innovations = self.TFN(Xt, InputData); #model the GWL
+              
         ''' In this section the functions are defined that relate to the plotting of different forcings and results. Each function starts with plot_function to be able to quickly find these modules. '''        
 
-    def plot_heads(self,color='r',observed = 0, modeled = 0):
-        assert modeled or observed == 0, 'No heads are chosen to be plotted'
-        
+    def plot_heads(self,color='r',observed = 0, modeled = 0, newfig = 0):
+        assert modeled == 0 or observed == 0, 'No heads are chosen to be plotted'
+        if newfig == 0:
+            plt.figure()
         if observed == 0:
             plt.plot(md.num2date(self.Time_Axis), self.Head_Observed, 'k.')
         if modeled == 0:
