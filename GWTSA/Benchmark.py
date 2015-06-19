@@ -36,8 +36,8 @@ Imax = Parameters[8]
 dt= 1 
 
 #Recharge model 
-R = percolation(Bore1._time_model, Bore1.precipitation, Bore1.evaporation, S_cap, K_sat, Beta, Imax, dt, solver=0)[0]
-
+recharge = percolation(Bore1._time_model, Bore1.precipitation, Bore1.evaporation, S_cap, K_sat, Beta, Imax, dt, solver=0)[0]
+print recharge[100:105]
 #plt.plot((Bore1.P-Bore1.E))
 #plt.plot(R, 'r')
 #print sum(R[2000:]), sum(Bore1.P[2000:]) #/ 10000.0 - Bore1.E[2000:] / 10000.0)
@@ -45,7 +45,7 @@ R = percolation(Bore1._time_model, Bore1.precipitation, Bore1.evaporation, S_cap
 # Set the value for the timestep to calculate the innovations
 Fs = A * gammainc(n,Bore1._time_model/a) # Step response function based on pearsonIII
 Fb = Fs[1:] - Fs[0:-1] #block reponse function
-H = d + np.convolve(R,Fb)
+H = d + np.convolve(recharge,Fb)
 
 np.random.seed(22)
 r = 0.00 * np.random.standard_normal(len(Bore1._time_model)) # Residuals

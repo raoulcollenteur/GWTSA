@@ -42,7 +42,7 @@ cdef inline double c_max(double a, double b): return a if a >= b else b
 cdef inline double c_min(double a, double b): return a if a <= b else b
 
 
-def percolation(np.ndarray[np.int_t] Time_Model, np.ndarray[np.float_t, ndim=1] P, np.ndarray[np.float_t, ndim=1] Ep, double S_cap = 1.0, double K_sat = -1.5, double Beta = 2.0, double Imax = -3, int dt = 1, int solver = 0):
+def percolation(np.ndarray[np.int_t] Time_Model, np.ndarray[np.float_t, ndim=1] P, np.ndarray[np.float_t, ndim=1] E, double S_cap = 1.0, double K_sat = -1.5, double Beta = 2.0, double Imax = -3, int dt = 1, int solver = 0):
     
     cdef int t, iteration, bisection, n
     cdef double error, Last_S, g, g_derivative, a, b, c
@@ -63,14 +63,16 @@ def percolation(np.ndarray[np.int_t] Time_Model, np.ndarray[np.float_t, ndim=1] 
     Pe[0] = 0.0    
     cdef np.ndarray[np.float_t] Ei = np.zeros(n)
     Ei[0] = 0.0  
+    cdef np.ndarray[np.float_t] Ep = np.zeros(n)
+    Ep[0] = 0.0  
     
     for t in range(n-1):
         Si[t+1] = Si[t] + P[t+1]                # Fill interception bucket with new rain
         Pe[t+1] = c_max(0.0, Si[t+1] - Imax)    # Calculate effective precipitation
         Si[t+1] = Si[t+1] - Pe[t+1]             
-        Ei[t+1] = c_min(Si[t+1], Ep[t+1])       # Evaporation from interception
+        Ei[t+1] = c_min(Si[t+1], E[t+1])       # Evaporation from interception
         Si[t+1] = Si[t+1] - Ei[t+1]             # Update interception state
-        Ep[t+1] = Ep[t+1] - Ei[t+1]             # Update potential evapotranspiration    
+        Ep[t+1] = E[t+1] - Ei[t+1]             # Update potential evapotranspiration    
     
         Last_S = S[t]
         iteration = 0
