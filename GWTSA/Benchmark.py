@@ -12,7 +12,6 @@ from Unsat_Zone import percolation
 from TFN_Model import TFN4
 from datetime import date
 
-print 'Import of packages succesfull!'
 plt.close('all')
 
 Bore = 'Test_Data/GW_Levels' # For Time Data to make realistic test series
@@ -29,7 +28,7 @@ A = 10**Parameters[0]
 a = Parameters[1]
 n = Parameters[2]
 d = Parameters[3]
-Alpha = 10**Parameters[4]
+alpha = 10**Parameters[4]
 S_cap = Parameters[5]
 K_sat = Parameters[6]
 Beta = Parameters [7]
@@ -37,31 +36,31 @@ Imax = Parameters[8]
 dt= 1 
 
 #Recharge model 
-R = percolation(Bore1.Time_Model, Bore1.P, Bore1.E, S_cap, K_sat, Beta, Imax , dt, solver = 1)[0]
+R = percolation(Bore1._time_model, Bore1.precipitation, Bore1.evaporation, S_cap, K_sat, Beta, Imax, dt, solver=0)[0]
 
 #plt.plot((Bore1.P-Bore1.E))
 #plt.plot(R, 'r')
 #print sum(R[2000:]), sum(Bore1.P[2000:]) #/ 10000.0 - Bore1.E[2000:] / 10000.0)
 
 # Set the value for the timestep to calculate the innovations
-Fs = A * gammainc(n,Bore1.Time_Model/a) # Step response function based on pearsonIII
+Fs = A * gammainc(n,Bore1._time_model/a) # Step response function based on pearsonIII
 Fb = Fs[1:] - Fs[0:-1] #block reponse function
 H = d + np.convolve(R,Fb)
 
 np.random.seed(22)
-r = 0.00 * np.random.standard_normal(len(Bore1.Time_Model)) # Residuals
-NM = np.exp(-Bore1.Time_Model/Alpha) #Noise Model
+r = 0.00 * np.random.standard_normal(len(Bore1._time_model)) # Residuals
+NM = np.exp(-Bore1._time_model/alpha) #Noise Model
 e = np.convolve(r,NM)
-Ho = H[0:len(Bore1.Time_Model)] + e[0:len(Bore1.Time_Model)]
+Ho = H[0:len(Bore1._time_model)] + e[0:len(Bore1._time_model)]
 
 plt.plot(Ho)
-plt.plot(H[0:len(Bore1.Time_Model)])
-plt.plot(e[0:len(Bore1.Time_Model)])
+plt.plot(H[0:len(Bore1._time_model)])
+plt.plot(e[0:len(Bore1._time_model)])
 
-Ho = Ho[Bore1.Time_Observed]
+Ho = Ho[Bore1._time_observed]
 
 # Make a datetime 
-Time = md.num2date(Bore1.Time_Axis)
+Time = md.num2date(Bore1._time_axis)
 
 # Create a list with string of YY-MM-DD format
 for i in range(len(Time)):
@@ -70,13 +69,13 @@ for i in range(len(Time)):
 X = zip(Time,Ho)   
 
 np.savetxt('Test_Data/GW_Levels.txt', X, header='[400.0, 10.0, 1.35, 7.0, 50.0, 0.0, -3.0, 2.0, -3.0]', fmt = '%s', delimiter = ',', newline = '\r\n')
-    
-Hm = Bore1.simulate(Parameters, 'TFN4')
+
+Hm = Bore1.simulate('TFN4', Parameters)
 Bore1.plot_heads(newfig = 0)
 
-#R1 = percolation(Bore1.Time_Model, Bore1.P, Bore1.E, S_cap, K_sat, Beta, D , dt)
-#R2 = percolation(Bore1.Time_Model, Bore1.P, Bore1.E, S_cap, K_sat, Beta, D , dt)
-#R3 = percolation(Bore1.Time_Model, Bore1.P, Bore1.E, S_cap, K_sat, Beta, D , dt)
+#R1 = percolation(Bore1._time_model, Bore1.P, Bore1.E, S_cap, K_sat, Beta, D , dt)
+#R2 = percolation(Bore1._time_model, Bore1.P, Bore1.E, S_cap, K_sat, Beta, D , dt)
+#R3 = percolation(Bore1._time_model, Bore1.P, Bore1.E, S_cap, K_sat, Beta, D , dt)
 #plt.figure()
 #plt.plot(R)
 #plt.plot(R1)

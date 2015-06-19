@@ -13,14 +13,14 @@ from Unsat_Zone import percolation
 TFN1 defines what is in this research the most simple transfer function noise (TFN) model. The model is linear and the recharge is calculated by extracting the evaporation from the precipitation
 '''
 
-def TFN1(Parameters,InputData, solver = 0):
+def TFN1(parameters,InputData, solver = 0):
     
     #Unpack all the parameters that should be calibrated
-    A = Parameters[0]
-    a = Parameters[1]
-    n = Parameters[2]
-    d = Parameters[3]
-    alpha = Parameters[4]
+    A = parameters[0]
+    a = parameters[1]
+    n = parameters[2]
+    d = parameters[3]
+    alpha = parameters[4]
     
     #unpack all the data that is needed for the simulation
     t = InputData[1]
@@ -48,15 +48,15 @@ def TFN1(Parameters,InputData, solver = 0):
 TFN2 defines a TFN model that deals with the recharge a little more, adding a parameter 'f' that determines what part of the evaporation is extracted from the recharge. 
 '''
 
-def TFN2(Parameters,InputData):
+def TFN2(parameters,InputData):
     
     #Unpack all the parameters that should be calibrated
-    A = Parameters[0]
-    a = Parameters[1]
-    n = Parameters[2]
-    d = Parameters[3]
-    alpha = Parameters[4]
-    f = Parameters[5]
+    A = parameters[0]
+    a = parameters[1]
+    n = parameters[2]
+    d = parameters[3]
+    alpha = parameters[4]
+    f = parameters[5]
     
     #unpack all the data that is needed for the simulation
     t = InputData[1]
@@ -85,18 +85,18 @@ TFN3 defines a TFN model that deals with the recharge a little more, adding a pa
 '''
     
     
-def TFN3(Parameters,InputData):
+def TFN3(parameters,InputData):
     
     #Unpack all the parameters that should be calibrated
-    A = Parameters[0]
-    a = Parameters[1]
-    n = Parameters[2]
-    d = Parameters[3]
-    alpha = Parameters[4]
-    f = Parameters[5]
-    B = Parameters[6]
-    b = Parameters[7]
-    m = Parameters[8]
+    A = parameters[0]
+    a = parameters[1]
+    n = parameters[2]
+    d = parameters[3]
+    alpha = parameters[4]
+    f = parameters[5]
+    B = parameters[6]
+    b = parameters[7]
+    m = parameters[8]
     
     #unpack all the data that is needed for the simulation
     t = InputData[1]
@@ -122,40 +122,42 @@ def TFN3(Parameters,InputData):
     v = v[istart:len(v):1] #give back the innovations for every xth time step
     return [Hm, v]    
     
-def TFN4(Parameters,InputData, solver = 0):
-    # Unpack all the parameters that should be calibrated
-    A = 10**Parameters[0]
-    a = Parameters[1]
-    n = Parameters[2]
-    d = Parameters[3]
-    Alpha = 10**Parameters[4]
-    S_cap = Parameters[5]
-    K_sat = Parameters[6]
-    Beta = Parameters [7]
-    Imax = Parameters[8]
+''' TFN4 has the non-linear unsaturated zone model to calculate the recharge  
+'''    
     
+def TFN4(parameters,InputData, solver = 0):
+    # Unpack all the parameters that should be calibrated
+    A = 10**parameters[0]
+    a = parameters[1]
+    n = parameters[2]
+    d = parameters[3]
+    alpha = 10**parameters[4]
+    S_cap = parameters[5]
+    K_sat = parameters[6]
+    Beta = parameters [7]
+    Imax = parameters[8]
+
     # unpack all the data that is needed for the simulation
-    Time_Model = InputData[1]
+    time_model = InputData[1]
     P = InputData[2]
     E = InputData[3]
-    Ho = InputData[4]
+    head_observed = InputData[4]
     to = InputData[5] 
-    Time_Step = InputData[6]
+    time_step = InputData[6]
     tstart = InputData[7]
     istart = np.where(to > tstart)[0][0]
     dt= 1 
   
     #Recharge model
-    R = percolation(Time_Model, P, E, S_cap, K_sat, Beta, Imax , dt, solver = 0)[0]
-    
+    recharge = percolation(time_model, P, E, S_cap, K_sat, Beta, Imax , dt, solver = 0)[0]
     # Set the value for the timestep to calculate the innovations
-    Fs = A * gammainc(n,Time_Model/a) # Step response function based on pearsonIII
+    Fs = A * gammainc(n, time_model/a) # Step response function based on pearsonIII
     Fb = Fs[1:] - Fs[0:-1] #block reponse function
-    Hm = d + np.convolve(R,Fb)
-    r = Ho - Hm[to] #Calculate the residuals at the timesteps with an observation
-    v = r[1:] - ( r[0:-1] * np.exp(-Time_Step/Alpha) )
-    v = v[istart:len(v):3] #give back the innovations for every xth time step
-    return [Hm, v]
-
+    head_modeled = d + np.convolve(recharge,Fb)
+    residuals = head_observed - head_modeled[to]
+    innovations = residuals[1:] - ( residuals[0:-1] * np.exp(-time_step/alpha) )
+    innovations = innovations[istart:len(innovations):3] #give back the innovations for every xth time step
+    
+    return [head_modeled, innovations]
 
     

@@ -15,12 +15,12 @@ import cma
 
 class Model:
 
-    def __init__(self, bore, forcing, rows=[5, 8], timestart=1000):
+    def __init__(self, bore, forcing, rows=[5, 8], timestart=2000):
         
         """
         Prepares the time series model with the forcings and observed heads
         
-        Parameters
+        parameters
         ----------
         bore: string
             name of the txt file containing the observed head values. 
@@ -52,7 +52,7 @@ class Model:
         self._time_steps = Ho[1:,0] - Ho[0:-1,0] #Calculate the timesteps
         self._time_axis = Ho[:,0] # Real Time in time number format for plots
         self._time_observed = np.append(0, [np.cumsum(self._time_steps)]).astype(int) #Timesteps with observed heads
-        self.__time_model = np.arange(0,sum(self._time_steps,1), dtype=int)     
+        self._time_model = np.arange(0,sum(self._time_steps,1), dtype=int)     
         self._time_start = timestart; #warmup time of the model [Days]
         self.head_observed = Ho[:,1]
                
@@ -88,7 +88,7 @@ class Model:
             
         Returns
         -------
-            - an array of the optimum parameters set (self.Parameters)
+            - an array of the optimum parameters set (self.parameters)
             - array with modeled heads (self.head_modeled)
             - array with innivations (self.innovations)
         
@@ -98,7 +98,7 @@ class Model:
         that depends on the Transfer Functions Noise Model that is used. 
         
         """
-        # Define the TFN Model and the Initial Parameters
+        # Define the TFN Model and the Initial parameters
         if TFN == 'TFN1':
             initial_parameters = [X0['A'],X0['a'],X0['n'],np.mean(self.head_observed),X0['Alpha']]
         elif TFN == 'TFN2':
@@ -115,85 +115,112 @@ class Model:
         InputData = [self.TFN, self._time_model, self.precipitation, self.evaporation, self.head_observed,self._time_observed, self._time_steps, self._time_start]
         
         if method == 0:
-            self.Parameters_opt = fmin(self.swsi, initial_parameters, args= (InputData,), maxiter= 1000 )      
+            self.parameters_opt = fmin(self.swsi, initial_parameters, args= (InputData,), maxiter= 1000 )      
         elif method == 1: 
             res = cma.fmin(self.swsi, initial_parameters, 0.5, args=(InputData,), options={'ftarget': 1e-5})
-            self.Parameters_opt = res[0]
+            self.parameters_opt = res[0]
 
         #Print the output parameters and compare to the real values'''
         self.Parameter_Names = ['A','a','n','d','alpha','S_cap', 'K_sat','Beta','D']
-        #print 'Explained Variance Percentage is:', self.explained_variance(self.Parameters,InputData)
-        for i in range(0,len(self.Parameters_opt)):
-            print self.Parameter_Names[i], '=', self.Parameters_opt[i]  
+        #print 'Explained Variance Percentage is:', self.explained_variance(self.parameters,InputData)
+        for i in range(0,len(self.parameters_opt)):
+            print self.Parameter_Names[i], '=', self.parameters_opt[i]  
         
-        if Cor == 0 and method == 1:
+        if correlation == 0 and method == 1:
             self.correlation_matrix = res[-2].correlation_matrix()
             print 'The Correlation Matrix:'
             print self.correlation_matrix
         
     def monte_carlo(self, TFN, X0, n=1000):
+        """
+        Runs a monte carlo analysis
+        
+        parameters
+        ----------     
+        TFN: string 
+            define the name of the Transfer function noise model you want to use (see TFN_Model.py)
+        X0: array
+            An two row array with the lower and upper bounds of the parameters            
+            E.g. X0 = np.array([[2.0, 8.0, 1.0],[2.6, 10.0]])
+        n: integer
+            number of runs that are performed.
+            
+        Returns
+        -------
+            - an array of the optimum parameters set (self.parameters_opt)
+            - an array with the results of the objective function
+            - an array with al the used parameters
+        
+        See Also
+        --------
+        
+        """
         self.TFN = getattr(TFN_Model, TFN)    
-        InputData = [self.TFN, self._time_model, self.P, self.E, self.head_observed, self._time_observed, self._time_steps, self._time_start]
+        InputData = [self.TFN, self._time_model, self.precipitation, self.evaporation, self.head_observed,self._time_observed, self._time_steps, self._time_start]
         
-        x = np.random.uniform(0.0, 1.0, (n,len(X0[0])))
-        self.Parameters = x * (X0[1] - X0[0]) + X0[0]
+        rnd = np.random.uniform(0.0, 1.0, (n,len(X0[0])))
+        self.parameters = rnd * (X0[1] - X0[0]) + X0[0]
         self.result = []
+        
         for i in range(n):
-            self.result = np.append(self.result, self.swsi(self.Parameters[i], InputData))
-        self.Parameter_opt = self.Parameters[self.result.argmin()]
+            self.result = np.append(self.result, self.swsi(self.parameters[i], InputData))
+        
+        self.parameter_opt = self.parameters[self.result.argmin()]
         print 'SWSI is:', self.result[self.result.argmin()]
-        return self.result, self.Parameters    
-        
-        
+        return self.result, self.parameters            
     
+    def simulate(self, TFN, parameters):
+        """
+        Simulate the groundwater levels with a certain parameter set
+        """
+        self.TFN = getattr(TFN_Model, TFN)   
+        InputData = [self.TFN, self._time_model, self.precipitation, self.evaporation, self.head_observed,self._time_observed, self._time_steps, self._time_start]
+        self.head_modeled, self.innovations = self.TFN(parameters, InputData);    
+
+
+
     '''This section contains the objective functions and diagnostic tests.'''
 
 # swsi constitutes the adapted version of the Sum of weighted squared innovations (swsi) developed by asmuth et al. (2005). For large values of alpha and small timesteps the numerator approaches zero. Therefore, Peterson et al. (2014) adapted the swsi function, making the numerator a natural log and changing the product operator to a summations.
    
-    def swsi(self, Parameters, InputData):
+    def swsi(self, parameters, InputData):
         TFN = InputData[0]
-        innovation = TFN(Parameters, InputData, solver=0)[1]
+        innovation = TFN(parameters, InputData, solver=0)[1]
         N = len(innovation)
-        alpha = 10**Parameters[4]
+        alpha = 10**parameters[4]
         dt = InputData[6][-N:]
         x = np.exp(sum(np.log(1 - np.exp(-2.0  / alpha * dt)))*(1.0/N))
         swsi = sum( (x / (1 - np.exp(-2.0 / alpha * dt ))) * innovation**2)
-        #print swsi2 #Print innovation to explore source of nan-values?!
         return swsi 
 
 # The Explained Variance Percentage (explained_variance) method compares variance of the
 # observed values to the variance of the residuals, that is observed values
 # minus the modelled values. (Asmuth et al, 2012)
 
-    def explained_variance(self, Parameters, InputData):
+    def explained_variance(self, parameters, InputData):
         TFN = InputData[0]
         to = InputData[5] #timesteps of observation
         Ho = InputData[4]
         tstart = InputData[7]
         istart = np.where(to > tstart)[0][0]
-        Hm = TFN(Parameters, InputData, method = 0)[0]
+        Hm = TFN(parameters, InputData, method = 0)[0]
         Hm = Hm[to[istart:]]
         Ho = Ho[istart:]
         E = np.array((np.var(Ho)**2 - np.var(Hm-Ho)**2)/np.var(Ho)**2*100)
         return E
-
-# the test function is sometimes helpfull when you have parameter set and want to see what the modeled heads will result in. This function is experimental. You need to run a model first..    
-
-    def simulate(self, Xt, TFN):
-        self.TFN = getattr(TFN_Model, TFN)   
-        InputData = [self.TFN, self._time_model, self.P, self.E, self.head_observed, self.Time_Observed, self.Time_Steps, self.Time_Start] 
-        self.head_modeled, self.Innovations = self.TFN(Xt, InputData); #model the GWL
               
-        ''' In this section the functions are defined that relate to the plotting of different forcings and results. Each function starts with plot_function to be able to quickly find these modules. '''        
+    ''' In this section the functions are defined that relate to the plotting 
+    of different forcings and results. Each function starts with plot_function 
+    to be able to quickly find these modules. '''        
 
     def plot_heads(self,color='r',observed=0, modeled=0, newfig=0):
         assert modeled == 0 or observed == 0, 'No heads are chosen to be plotted'
         if newfig == 0:
             plt.figure()
         if observed == 0:
-            plt.plot(md.num2date(self.Time_Axis), self.head_observed, 'k.')
+            plt.plot(md.num2date(self._time_axis), self.head_observed, 'k.')
         if modeled == 0:
-            plt.plot(md.num2date(np.arange(self.Time_Begin, self.Time_End+1)), 
+            plt.plot(md.num2date(np.arange(self._time_begin, self._time_end+1)), 
                  self.head_modeled[self._time_model], '-', color=color)
         plt.legend(['Observed Head','Modeled Head'], loc=1)
         plt.xlabel('Time [T]', size=20)
@@ -201,7 +228,7 @@ class Model:
         plt.title('%s' % (self.bore))
         
     def plot_innovations(self):
-        plt.plot(self.Innovations)
+        plt.plot(self.innovations)
         plt.title('Innovations of the time series')
         plt.xlabel('Innovations [-]')             
         
@@ -219,7 +246,7 @@ class Model:
         plt.legend('Precipitation','Potential Evapotranspiration')
         plt.title('Forcings',size=20)
         
-    def plot_impulseResponseFunction(self):
-        Fs = self.Parameters[0] * self.Parameters[1] * gammainc(self.Parameters[2], self._time_model/self.Parameters[1])
+    def plot_impulseResponseFunction(self, parameters):
+        Fs = parameters[0] * parameters[1] * gammainc(parameters[2], self._time_model/parameters[1])
         Fb = Fs[1:] - Fs[0:-1]
         plt.plot(self._time_model[0:-1],Fb)
