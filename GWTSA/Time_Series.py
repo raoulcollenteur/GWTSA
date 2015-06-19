@@ -115,7 +115,7 @@ class Model:
         InputData = [self.TFN, self._time_model, self.precipitation, self.evaporation, self.head_observed,self._time_observed, self._time_steps, self._time_start]
         
         if method == 0:
-            self.parameters_opt = fmin(self.swsi, initial_parameters, args= (InputData,), maxiter= 1000 )      
+            self.parameters_opt = fmin(self.swsi, initial_parameters, args= (InputData,), maxiter= 10000)      
         elif method == 1: 
             res = cma.fmin(self.swsi, initial_parameters, 0.5, args=(InputData,), options={'ftarget': 1e-5})
             self.parameters_opt = res[0]
@@ -165,7 +165,7 @@ class Model:
         for i in range(n):
             self.result = np.append(self.result, self.swsi(self.parameters[i], InputData))
         
-        self.parameter_opt = self.parameters[self.result.argmin()]
+        self.parameters_opt = self.parameters[self.result.argmin()]
         print 'SWSI is:', self.result[self.result.argmin()]
         return self.result, self.parameters            
     

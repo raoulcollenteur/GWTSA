@@ -151,7 +151,6 @@ def TFN4(parameters,InputData, solver = 0):
     #Recharge model
     recharge = percolation(time_model, P, E, S_cap, K_sat, Beta, Imax , dt, solver = 0)[0]
 
-    print recharge[100:105]
     # Set the value for the timestep to calculate the innovations
     Fs = A * gammainc(n, time_model/a) # Step response function based on pearsonIII
     Fb = Fs[1:] - Fs[0:-1] #block reponse function
