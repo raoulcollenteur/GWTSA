@@ -20,12 +20,11 @@ ts = Model(bore, forcing, rows=[5,8])
 
 X0 = {'A': 2.0,'a': 20, 'n': 1.5,'Alpha': 0.5, 'S_cap': -0.50, 'K_sat':-2, 'Beta': 1.5, 'D': -3, 'f': 0.8} # initial parameters
 
-ts.solve('TFN4', X0, method = 1, correlation = 0)
+ts.solve('TFN2', X0, method = 1, correlation = 0)
 
 ''' Optimal parameter set
 # (A, a, n, d, Alpha, S_cap, K_sat, Beta, D)
-Parameters = [2.6, 10.0, 1.35, 7.0, 1.0, 0.0, -3.0, 2.0, -3.0]'''
-
+Parameters = [2.6, 10.0, 1.35, 17.0, 1.0, 0.0, -3.0, 2.0, -3.0]'''
 
 
 #Timeserie.simulate(Parameters, 'TFN4')
@@ -38,5 +37,7 @@ Parameters = [2.6, 10.0, 1.35, 7.0, 1.0, 0.0, -3.0, 2.0, -3.0]'''
 #    plt.figure()
 #    plt.plot(Timeserie.Parameters[:,i], Timeserie.result, '.')
 
-ts.simulate('TFN4', ts.parameters_opt)
+ts.simulate('TFN2', ts.parameters_opt)
 ts.plot_heads()
+
+mat = ts.correlation_matrix

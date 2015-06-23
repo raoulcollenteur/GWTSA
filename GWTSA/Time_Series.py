@@ -103,10 +103,12 @@ class Model:
             initial_parameters = [X0['A'],X0['a'],X0['n'],np.mean(self.head_observed),X0['Alpha']]
         elif TFN == 'TFN2':
             initial_parameters = [X0['A'],X0['a'],X0['n'],np.mean(self.head_observed),X0['Alpha'], X0['f']]
+            self.Parameter_Names = ['A','a','n','d','alpha','f']
         elif TFN == 'TFN3':
             initial_parameters = [X0['A'],X0['a'],X0['n'],np.mean(self.head_observed),X0['Alpha']]
         elif TFN == 'TFN4':
-            initial_parameters = [X0['A'],X0['a'],X0['n'],np.mean(self.head_observed),X0['Alpha'],X0['S_cap'],X0['K_sat'], X0['Beta'], X0['D']]           
+            initial_parameters = [X0['A'],X0['a'],X0['n'],np.mean(self.head_observed),X0['Alpha'],X0['S_cap'],X0['K_sat'], X0['Beta'], X0['D']]
+            self.Parameter_Names = ['A','a','n','d','alpha','S_cap', 'K_sat','Beta','D']
         else:
             print 'Error: TFN model does not exist, chose another one or check TFN_Model.py!'
         
@@ -120,8 +122,6 @@ class Model:
             res = cma.fmin(self.swsi, initial_parameters, 0.5, args=(InputData,), options={'ftarget': 1e-5})
             self.parameters_opt = res[0]
 
-        #Print the output parameters and compare to the real values'''
-        self.Parameter_Names = ['A','a','n','d','alpha','S_cap', 'K_sat','Beta','D']
         #print 'Explained Variance Percentage is:', self.explained_variance(self.parameters,InputData)
         for i in range(0,len(self.parameters_opt)):
             print self.Parameter_Names[i], '=', self.parameters_opt[i]  
