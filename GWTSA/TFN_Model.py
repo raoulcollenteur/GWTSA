@@ -48,15 +48,15 @@ def TFN1(parameters,InputData, solver = 0):
 TFN2 defines a TFN model that deals with the recharge a little more, adding a parameter 'f' that determines what part of the evaporation is extracted from the recharge. 
 '''
     
-def TFN2(parameters,InputData, solver = 0):
+def TFN2(parameters,InputData, solver=0):
     
     #Unpack all the parameters that should be calibrated
-    A = 10**parameters[0]
+    A = parameters[0]
     a = parameters[1]
     n = parameters[2]
-    d = np.mean(InputData[4]) #parameters[3]
+    d = parameters[3]
     alpha = 10**parameters[4]
-    f = parameters[5]
+    f = 0.8 #parameters[5]
     
     #unpack all the data that is needed for the simulation
     time_model = InputData[1]
@@ -77,7 +77,7 @@ def TFN2(parameters,InputData, solver = 0):
     head_modeled = d + np.convolve(recharge,Fb)
     residuals = head_observed - head_modeled[time_observed]
     innovations = residuals[1:] - ( residuals[0:-1] * np.exp(-time_step/alpha) )
-    innovations = innovations[istart:len(innovations):3] #give back the innovations for every xth time step
+    innovations = innovations[istart:len(innovations):1] #give back the innovations for every xth time step
     
     return [head_modeled, innovations]
 
@@ -158,7 +158,7 @@ def TFN4(parameters,InputData, solver = 0):
     head_modeled = d + np.convolve(recharge,Fb)
     residuals = head_observed - head_modeled[to]
     innovations = residuals[1:] - ( residuals[0:-1] * np.exp(-time_step/alpha) )
-    innovations = innovations[istart:len(innovations):3] #give back the innovations for every xth time step
+    innovations = innovations[istart:len(innovations):1] #give back the innovations for every xth time step
     
     return [head_modeled, innovations]
 

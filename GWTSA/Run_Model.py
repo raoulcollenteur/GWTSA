@@ -16,9 +16,9 @@ plt.close('all')
 bore = 'Test_Data/B27B0081-001' #, 'B27B0238-002', 'B27B0081-001', 'B27C0002-001', 'B32F0002-001', 'B33A0113-001', 'B33C0140-001', 'B39E0117-001', 'B40B0304-001'
 forcing = 'Test_Data/KNMI_Bilt'
  
-ts = Model(bore, forcing, rows=[5,8])
+ts = Model(bore, forcing, rows=[5,8], timestart=1000)
 
-X0 = {'A': 2.0,'a': 20, 'n': 1.5,'Alpha': 0.5, 'S_cap': -0.50, 'K_sat':-2, 'Beta': 1.5, 'D': -3, 'f': 0.8} # initial parameters
+X0 = {'A': 10,'a': 400, 'n': 1.5,'Alpha': 0.5, 'S_cap': -0.50, 'K_sat':-2, 'Beta': 1.5, 'D': -3, 'f': 0.8} # initial parameters
 
 ts.solve('TFN2', X0, method = 1, correlation = 0)
 
@@ -40,4 +40,4 @@ Parameters = [2.6, 10.0, 1.35, 17.0, 1.0, 0.0, -3.0, 2.0, -3.0]'''
 ts.simulate('TFN2', ts.parameters_opt)
 ts.plot_heads()
 
-mat = ts.correlation_matrix
+#mat = ts.correlation_matrix

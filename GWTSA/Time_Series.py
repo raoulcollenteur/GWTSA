@@ -246,7 +246,8 @@ class Model:
         plt.legend('Precipitation','Potential Evapotranspiration')
         plt.title('Forcings',size=20)
         
-    def plot_impulseResponseFunction(self, parameters):
-        Fs = parameters[0] * parameters[1] * gammainc(parameters[2], self._time_model/parameters[1])
+    def plot_impulseResponseFunction(self):
+        plt.figure()
+        Fs = self.parameters_opt[0] * gammainc(self.parameters_opt[2], self._time_model/self.parameters_opt[1])
         Fb = Fs[1:] - Fs[0:-1]
         plt.plot(self._time_model[0:-1],Fb)
