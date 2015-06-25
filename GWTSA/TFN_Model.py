@@ -56,7 +56,7 @@ def TFN2(parameters,InputData, solver=0):
     n = parameters[2]
     d = parameters[3]
     alpha = 10**parameters[4]
-    f = 0.8 #parameters[5]
+    f = 10**parameters[5]
     
     #unpack all the data that is needed for the simulation
     time_model = InputData[1]
@@ -65,8 +65,6 @@ def TFN2(parameters,InputData, solver=0):
     head_observed = InputData[4]
     time_observed = InputData[5] 
     time_step = InputData[6]
-    tstart = InputData[7]
-    istart = np.where(time_observed > tstart)[0][0]
     
     #Recharge model
     recharge = precipitation - f * evaporation     
@@ -77,9 +75,8 @@ def TFN2(parameters,InputData, solver=0):
     head_modeled = d + np.convolve(recharge,Fb)
     residuals = head_observed - head_modeled[time_observed]
     innovations = residuals[1:] - ( residuals[0:-1] * np.exp(-time_step/alpha) )
-    innovations = innovations[istart:len(innovations):1] #give back the innovations for every xth time step
     
-    return [head_modeled, innovations]
+    return [head_modeled, innovations, recharge, residuals]
 
 '''
 TFN3 defines a TFN model that deals with the recharge a little more, adding a parameter 'f' that determines what part of the evaporation is extracted from the recharge. 
@@ -128,7 +125,7 @@ def TFN3(parameters,InputData):
     
 def TFN4(parameters,InputData, solver = 0):
     # Unpack all the parameters that should be calibrated
-    A = 10**parameters[0]
+    A = parameters[0]
     a = parameters[1]
     n = parameters[2]
     d = parameters[3]
@@ -143,23 +140,18 @@ def TFN4(parameters,InputData, solver = 0):
     P = InputData[2]
     E = InputData[3]
     head_observed = InputData[4]
-    to = InputData[5] 
+    time_observed = InputData[5] 
     time_step = InputData[6]
-    tstart = InputData[7]
-    istart = np.where(to > tstart)[0][0]
     dt= 1 
   
     #Recharge model
     recharge = percolation(time_model, P, E, S_cap, K_sat, Beta, Imax , dt, solver = 0)[0]
-
-    # Set the value for the timestep to calculate the innovations
+    
     Fs = A * gammainc(n, time_model/a) # Step response function based on pearsonIII
     Fb = Fs[1:] - Fs[0:-1] #block reponse function
     head_modeled = d + np.convolve(recharge,Fb)
-    residuals = head_observed - head_modeled[to]
+    residuals = head_observed - head_modeled[time_observed]
     innovations = residuals[1:] - ( residuals[0:-1] * np.exp(-time_step/alpha) )
-    innovations = innovations[istart:len(innovations):1] #give back the innovations for every xth time step
     
-    return [head_modeled, innovations]
-
+    return [head_modeled, innovations, recharge, residuals]
     

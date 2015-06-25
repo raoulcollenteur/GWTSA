@@ -117,7 +117,7 @@ class Model:
         InputData = [self.TFN, self._time_model, self.precipitation, self.evaporation, self.head_observed,self._time_observed, self._time_steps, self._time_start]
         
         if method == 0:
-            self.parameters_opt = fmin(self.swsi, initial_parameters, args= (InputData,), maxiter= 10000)      
+            self.parameters_opt= fmin(self.swsi, initial_parameters, args= (InputData,), maxiter= 100)      
         elif method == 1: 
             res = cma.fmin(self.swsi, initial_parameters, 0.5, args=(InputData,), options={'ftarget': 1e-5})
             self.parameters_opt = res[0]
@@ -175,9 +175,11 @@ class Model:
         """
         self.TFN = getattr(TFN_Model, TFN)   
         InputData = [self.TFN, self._time_model, self.precipitation, self.evaporation, self.head_observed,self._time_observed, self._time_steps, self._time_start]
-        self.head_modeled, self.innovations = self.TFN(parameters, InputData);    
-
-
+        self.head_modeled, self.innovations, self.recharge, self.residuals = self.TFN(parameters, InputData);   
+        self.explained_variance = (np.var(self.head_observed)**2 - np.var(self.head_modeled[self._time_observed]-self.head_observed)**2)/np.var(self.head_observed)**2*100
+        self.swsi_value = self.swsi(self.parameters_opt, InputData)
+        print 'EVP is:', self.explained_variance
+        print 'SWSI is:', self.swsi_value
 
     '''This section contains the objective functions and diagnostic tests.'''
 
@@ -185,29 +187,14 @@ class Model:
    
     def swsi(self, parameters, InputData):
         TFN = InputData[0]
-        innovation = TFN(parameters, InputData, solver=0)[1]
+        spinup = np.where(InputData[5]  > InputData[7])[0][0] # Where 
+        innovation = TFN(parameters, InputData, solver=0)[1][spinup:-1:3]
         N = len(innovation)
         alpha = 10**parameters[4]
         dt = InputData[6][-N:]
         x = np.exp(sum(np.log(1 - np.exp(-2.0  / alpha * dt)))*(1.0/N))
         swsi = sum( (x / (1 - np.exp(-2.0 / alpha * dt ))) * innovation**2)
         return swsi 
-
-# The Explained Variance Percentage (explained_variance) method compares variance of the
-# observed values to the variance of the residuals, that is observed values
-# minus the modelled values. (Asmuth et al, 2012)
-
-    def explained_variance(self, parameters, InputData):
-        TFN = InputData[0]
-        to = InputData[5] #timesteps of observation
-        Ho = InputData[4]
-        tstart = InputData[7]
-        istart = np.where(to > tstart)[0][0]
-        Hm = TFN(parameters, InputData, method = 0)[0]
-        Hm = Hm[to[istart:]]
-        Ho = Ho[istart:]
-        E = np.array((np.var(Ho)**2 - np.var(Hm-Ho)**2)/np.var(Ho)**2*100)
-        return E
               
     ''' In this section the functions are defined that relate to the plotting 
     of different forcings and results. Each function starts with plot_function 
@@ -222,15 +209,56 @@ class Model:
         if modeled == 0:
             plt.plot(md.num2date(np.arange(self._time_begin, self._time_end+1)), 
                  self.head_modeled[self._time_model], '-', color=color)
-        plt.legend(['Observed Head','Modeled Head'], loc=1)
+        plt.legend(['Observed Head','Modeled Head'], loc=0)
         plt.xlabel('Time [T]', size=20)
         plt.ylabel('Groundwater Head [L]', size=20)
         plt.title('%s' % (self.bore))
         
-    def plot_innovations(self):
-        plt.plot(self.innovations)
-        plt.title('Innovations of the time series')
-        plt.xlabel('Innovations [-]')             
+    def plot_results(self):
+        
+        plt.figure(figsize=(15,9))
+        gs = plt.GridSpec(3, 4, wspace=0.2)
+
+        # Plot the recharge
+        ax1 = plt.subplot(gs[0,:-1])
+        plt.bar(md.num2date(np.arange(self._time_begin, self._time_end+1)), self.recharge, lw=0)
+        plt.ylabel('Recharge [m]')
+        plt.legend(['Recharge'])
+        plt.title('%s' % (self.bore))   
+        
+        # Plot the Groundwater levels
+        ax2 = plt.subplot(gs[1,:-1])
+        plt.plot(md.num2date(self._time_axis), self.head_observed, 'k.')
+        plt.plot(md.num2date(np.arange(self._time_begin, self._time_end+1)), 
+                 self.head_modeled[self._time_model], '-')
+        plt.legend(['Observed Head','Modeled Head'], loc=0)
+        plt.ylabel('Groundwater head [m]')
+              
+        # Plot the residuals and innovations  
+        ax3 = plt.subplot(gs[2,:-1])      
+        plt.plot(md.num2date(self._time_axis), self.residuals, 'b')
+        plt.plot(md.num2date(self._time_axis[0:-1]), self.innovations, 'orange')
+        plt.legend(['residuals','innovations'], loc=0)
+        plt.ylabel('Error [m]')
+        plt.xlabel('Time')                         
+        
+        ax4 = plt.subplot(gs[0,-1])    
+        Fs = self.parameters_opt[0] * gammainc(self.parameters_opt[2], self._time_model/self.parameters_opt[1])
+        Fb = Fs[1:] - Fs[0:-1]
+        plt.plot(self._time_model[0:-1],Fb)
+        plt.title('Impulse Response Function')
+        
+        # Plot the Model Parameters (Experimental)
+        ax4 = plt.subplot(gs[1,-1])
+        ax4.xaxis.set_visible(False)
+        ax4.yaxis.set_visible(False)
+        text = np.vstack((self.Parameter_Names,self.parameters_opt)).T
+        colLabels=("Parameter", "Value")
+        the_table = ax4.table(cellText=text, colLabels=colLabels, loc='center')        
+    
+        # Table of the numerical diagnostics.
+        ax5 = plt.subplot(gs[2,-1])   
+        
         
     def plot_forcings(self):
         plt.figure()
