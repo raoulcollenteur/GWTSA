@@ -12,7 +12,7 @@ from scipy.special import gammainc
 import TFN_Model
 import cma
 
-
+#%%
 class Model:
 
     def __init__(self, bore, forcing, rows=[5, 8], timestart=2000):
@@ -68,7 +68,9 @@ class Model:
         
     def __repr__(self):
         return 'Time Series Data of Bore: %s' %self.bore
-        
+ 
+#%% 
+       
     def solve(self, TFN, X0, method=0, correlation=1):
         
         """ 
@@ -112,20 +114,17 @@ class Model:
         else:
             print 'Error: TFN model does not exist, chose another one or check TFN_Model.py!'
         
-        self.TFN = getattr(TFN_Model, TFN)    
+        self.TFN = getattr(TFN_Model, TFN)
+        self._TFN = TFN
     
         InputData = [self.TFN, self._time_model, self.precipitation, self.evaporation, self.head_observed,self._time_observed, self._time_steps, self._time_start]
         
         if method == 0:
-            self.parameters_opt= fmin(self.swsi, initial_parameters, args= (InputData,), maxiter= 100)      
+            self.parameters_opt= fmin(self.swsi, initial_parameters, args= (InputData,), maxiter= 10000)      
         elif method == 1: 
             res = cma.fmin(self.swsi, initial_parameters, 0.5, args=(InputData,), options={'ftarget': 1e-5})
             self.parameters_opt = res[0]
 
-        #print 'Explained Variance Percentage is:', self.explained_variance(self.parameters,InputData)
-        for i in range(0,len(self.parameters_opt)):
-            print self.Parameter_Names[i], '=', self.parameters_opt[i]  
-        
         if correlation == 0 and method == 1:
             self.correlation_matrix = res[-2].correlation_matrix()
             print 'The Correlation Matrix:'
@@ -175,15 +174,17 @@ class Model:
         """
         self.TFN = getattr(TFN_Model, TFN)   
         InputData = [self.TFN, self._time_model, self.precipitation, self.evaporation, self.head_observed,self._time_observed, self._time_steps, self._time_start]
+        
         self.head_modeled, self.innovations, self.recharge, self.residuals = self.TFN(parameters, InputData);   
+        
+        # Calculate the Explained Variance Percentage
         self.explained_variance = (np.var(self.head_observed)**2 - np.var(self.head_modeled[self._time_observed]-self.head_observed)**2)/np.var(self.head_observed)**2*100
+        
         self.swsi_value = self.swsi(self.parameters_opt, InputData)
-        print 'EVP is:', self.explained_variance
-        print 'SWSI is:', self.swsi_value
 
     '''This section contains the objective functions and diagnostic tests.'''
 
-# swsi constitutes the adapted version of the Sum of weighted squared innovations (swsi) developed by asmuth et al. (2005). For large values of alpha and small timesteps the numerator approaches zero. Therefore, Peterson et al. (2014) adapted the swsi function, making the numerator a natural log and changing the product operator to a summations.
+#%% swsi constitutes the adapted version of the Sum of weighted squared innovations (swsi) developed by asmuth et al. (2005). For large values of alpha and small timesteps the numerator approaches zero. Therefore, Peterson et al. (2014) adapted the swsi function, making the numerator a natural log and changing the product operator to a summations.
    
     def swsi(self, parameters, InputData):
         TFN = InputData[0]
@@ -196,9 +197,7 @@ class Model:
         swsi = sum( (x / (1 - np.exp(-2.0 / alpha * dt ))) * innovation**2)
         return swsi 
               
-    ''' In this section the functions are defined that relate to the plotting 
-    of different forcings and results. Each function starts with plot_function 
-    to be able to quickly find these modules. '''        
+#%% In this section the functions are defined that relate to the plotting of different forcings and results. Each function starts with plot_function to be able to quickly find these modules.        
 
     def plot_heads(self,color='r',observed=0, modeled=0, newfig=0):
         assert modeled == 0 or observed == 0, 'No heads are chosen to be plotted'
@@ -217,6 +216,7 @@ class Model:
     def plot_results(self):
         
         plt.figure(figsize=(15,9))
+        plt.suptitle('GWTSA %s Model Results' %self._TFN, fontsize=16, fontweight='bold')
         gs = plt.GridSpec(3, 4, wspace=0.2)
 
         # Plot the recharge
@@ -224,6 +224,7 @@ class Model:
         plt.bar(md.num2date(np.arange(self._time_begin, self._time_end+1)), self.recharge, lw=0)
         plt.ylabel('Recharge [m]')
         plt.legend(['Recharge'])
+        ax1.xaxis.set_visible(False)
         plt.title('%s' % (self.bore))   
         
         # Plot the Groundwater levels
@@ -231,6 +232,7 @@ class Model:
         plt.plot(md.num2date(self._time_axis), self.head_observed, 'k.')
         plt.plot(md.num2date(np.arange(self._time_begin, self._time_end+1)), 
                  self.head_modeled[self._time_model], '-')
+        ax2.xaxis.set_visible(False)         
         plt.legend(['Observed Head','Modeled Head'], loc=0)
         plt.ylabel('Groundwater head [m]')
               
@@ -242,23 +244,28 @@ class Model:
         plt.ylabel('Error [m]')
         plt.xlabel('Time')                         
         
+        # Plot the Impulse Response Function
         ax4 = plt.subplot(gs[0,-1])    
         Fs = self.parameters_opt[0] * gammainc(self.parameters_opt[2], self._time_model/self.parameters_opt[1])
         Fb = Fs[1:] - Fs[0:-1]
         plt.plot(self._time_model[0:-1],Fb)
-        plt.title('Impulse Response Function')
+        plt.xlim(0,np.where(np.cumsum(Fb)>0.999*sum(Fb))[0][0]) # cut off plot after 99.9% of the response
+        plt.title('Impulse Response')
         
         # Plot the Model Parameters (Experimental)
-        ax4 = plt.subplot(gs[1,-1])
-        ax4.xaxis.set_visible(False)
-        ax4.yaxis.set_visible(False)
+        ax5 = plt.subplot(gs[1,-1])
+        ax5.xaxis.set_visible(False)
+        ax5.yaxis.set_visible(False)
         text = np.vstack((self.Parameter_Names,self.parameters_opt)).T
         colLabels=("Parameter", "Value")
-        the_table = ax4.table(cellText=text, colLabels=colLabels, loc='center')        
+        ax5.table(cellText=text, colLabels=colLabels, loc='center') 
     
         # Table of the numerical diagnostics.
-        ax5 = plt.subplot(gs[2,-1])   
-        
+        ax6 = plt.subplot(gs[2,-1])   
+        ax6.xaxis.set_visible(False)
+        ax6.yaxis.set_visible(False)        
+        plt.text(0.1,0.33,'SWSI: %s' %self.swsi_value, fontsize=12 )
+        plt.text(0.1,0.66,'Explained variance: %.2f %s' %( self.explained_variance, '%'), fontsize=12 )        
         
     def plot_forcings(self):
         plt.figure()
