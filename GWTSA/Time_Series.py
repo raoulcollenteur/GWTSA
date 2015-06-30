@@ -63,7 +63,6 @@ class Model:
         self.precipitation[self.precipitation < 0.0] = 0.0
         self.evaporation = ClimateData[:,2] / 10000.0 # divided by 10000 to make it in meters
         self.evaporation[self.evaporation < 0.0] = 0.0
-
         self.bore = bore
         
     def __repr__(self):
@@ -90,7 +89,7 @@ class Model:
             
         Returns
         -------
-            - an array of the optimum parameters set (self.parameters)
+            - an array of the optimum parameters set (self.parameters_opt)
             - array with modeled heads (self.head_modeled)
             - array with innivations (self.innovations)
         
@@ -119,11 +118,17 @@ class Model:
     
         InputData = [self.TFN, self._time_model, self.precipitation, self.evaporation, self.head_observed,self._time_observed, self._time_steps, self._time_start]
         
+        self.parameters = initial_parameters
+        def save_par(par):
+            self.parameters = np.vstack((self.parameters, par))
+        
         if method == 0:
-            self.parameters_opt= fmin(self.swsi, initial_parameters, args= (InputData,), maxiter= 10000)      
+            self.parameters_opt= fmin(self.swsi, initial_parameters, args= (InputData,), callback=save_par, maxiter= 10000)
         elif method == 1: 
-            res = cma.fmin(self.swsi, initial_parameters, 0.5, args=(InputData,), options={'ftarget': 1e-5})
+            res = cma.fmin(self.swsi, initial_parameters, 2.0, args=(InputData,), options={'ftarget': 1e-1})
             self.parameters_opt = res[0]
+            self.parameters = res[-1]
+            #self.parameters = res[]
 
         if correlation == 0 and method == 1:
             self.correlation_matrix = res[-2].correlation_matrix()
@@ -178,9 +183,13 @@ class Model:
         self.head_modeled, self.innovations, self.recharge, self.residuals = self.TFN(parameters, InputData);   
         
         # Calculate the Explained Variance Percentage
-        self.explained_variance = (np.var(self.head_observed)**2 - np.var(self.head_modeled[self._time_observed]-self.head_observed)**2)/np.var(self.head_observed)**2*100
+        i = self._time_observed > self._time_start
+        self.explained_variance = (np.var(self.head_observed[i])**2 - np.var(self.head_modeled[self._time_observed[i]]-self.head_observed[i])**2)/np.var(self.head_observed[i])**2*100
         
         self.swsi_value = self.swsi(self.parameters_opt, InputData)
+        
+        self.rmse = np.sqrt(sum((self.head_modeled[self._time_observed[i]]-self.head_observed[i])**2) / len(self.head_observed[i]))
+        self.avg_dev = sum(self.head_modeled[self._time_observed[i]]-self.head_observed[i]) / len(self.head_observed[i])
 
     '''This section contains the objective functions and diagnostic tests.'''
 
@@ -222,7 +231,7 @@ class Model:
         # Plot the recharge
         ax1 = plt.subplot(gs[0,:-1])
         plt.bar(md.num2date(np.arange(self._time_begin, self._time_end+1)), self.recharge, lw=0)
-        plt.ylabel('Recharge [m]')
+        plt.ylabel('Recharge [m/d]')
         plt.legend(['Recharge'])
         ax1.xaxis.set_visible(False)
         plt.title('%s' % (self.bore))   
@@ -264,19 +273,21 @@ class Model:
         ax6 = plt.subplot(gs[2,-1])   
         ax6.xaxis.set_visible(False)
         ax6.yaxis.set_visible(False)        
-        plt.text(0.1,0.33,'SWSI: %s' %self.swsi_value, fontsize=12 )
-        plt.text(0.1,0.66,'Explained variance: %.2f %s' %( self.explained_variance, '%'), fontsize=12 )        
+        plt.text(0.05, 0.80, 'SWSI: %.2f meter' %self.swsi_value, fontsize=12 )
+        plt.text(0.05, 0.60, 'Explained variance: %.2f %s' %( self.explained_variance, '%'), fontsize=12 )
+        plt.text(0.05, 0.40, 'RMSE: %.2f meter' %self.rmse, fontsize=12)        
+        plt.text(0.05, 0.20, 'Average deviation: %.2f meter' %self.avg_dev, fontsize=12)  
         
     def plot_forcings(self):
         plt.figure()
         plt.bar(md.num2date( self.ClimateData[:,0]), self.ClimateData[:,1], color='b', lw=0)
-        plt.ylabel('P [0.1 mm/D]', size=20)
+        plt.ylabel('P [m/d]', size=20)
         plt.ylim(0,max(self.ClimateData[:,1]))        
         ax1 = plt.gca()
         ax2 = ax1.twinx() # To create a second axis on the right
         plt.bar(md.num2date( self.ClimateData[:,0]), self.ClimateData[:,2], color='red', lw=0)
         ax2.set_ylim((0,400)[::-1])
-        plt.ylabel('E [0.1 mm/D]',size=20)
+        plt.ylabel('E [m/d]',size=20)
         plt.xlabel('Time [Years]',size=20)
         plt.legend('Precipitation','Potential Evapotranspiration')
         plt.title('Forcings',size=20)

@@ -125,8 +125,8 @@ def TFN3(parameters,InputData):
     
 def TFN4(parameters,InputData, solver = 0):
     # Unpack all the parameters that should be calibrated
-    A = parameters[0]
-    a = parameters[1]
+    A = 10**parameters[0]
+    a = 10**parameters[1]
     n = parameters[2]
     d = parameters[3]
     alpha = 10**parameters[4]
