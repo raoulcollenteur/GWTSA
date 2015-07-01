@@ -127,7 +127,8 @@ class Model:
         elif method == 1: 
             res = cma.fmin(self.swsi, initial_parameters, 2.0, args=(InputData,), options={'ftarget': 1e-1})
             self.parameters_opt = res[0]
-            self.parameters = res[-1]
+            self.res = res # NOT USED, BUT MIGHT INCLUDE THE PARAMETERS
+            self.parameters = np.loadtxt('outcmaesxrecentbest.dat', skiprows=2)[:,5:]
             #self.parameters = res[]
 
         if correlation == 0 and method == 1:
@@ -277,6 +278,39 @@ class Model:
         plt.text(0.05, 0.60, 'Explained variance: %.2f %s' %( self.explained_variance, '%'), fontsize=12 )
         plt.text(0.05, 0.40, 'RMSE: %.2f meter' %self.rmse, fontsize=12)        
         plt.text(0.05, 0.20, 'Average deviation: %.2f meter' %self.avg_dev, fontsize=12)  
+
+    def plot_diagnostics(self):
+        plt.figure()
+        gs = plt.GridSpec(4,4, wspace=0.4, hspace=0.4)
+        plt.suptitle('GWTSA Parameter diagnostics', fontsize=16, fontweight='bold')
+        
+        # Plot the parameter evolutions
+        ax1 = plt.subplot(gs[0:2,0:2])
+        plt.plot(self.parameters)
+        plt.title('parameters evolution')
+        plt.ylabel('parameter value')
+        plt.ylabel('iteration')
+        
+        try:
+            self.correlation_matrix
+            ax2 = plt.subplot(gs[0:2,2:4])
+            plt.pcolormesh(self.correlation_matrix, cmap='coolwarm', alpha=0.6)
+            ax2.set_xticklabels(self.Parameter_Names, rotation=40, ha='right')
+            ax2.set_yticklabels(self.Parameter_Names, rotation=40, va='bottom')
+            plt.colorbar()
+            plt.title('correlation matrix')
+        except:
+            pass
+        
+        ax3 = plt.subplot(gs[2:4,0:2])
+        
+        
+        ax4 = plt.subplot(gs[2:4,2:4])  
+        ax4.xaxis.set_visible(False)
+        ax4.yaxis.set_visible(False)
+        text = np.vstack((self.Parameter_Names,self.parameters_opt)).T
+        colLabels=("Parameter", "Value")
+        ax4.table(cellText=text, colLabels=colLabels, loc='center')                   
         
     def plot_forcings(self):
         plt.figure()

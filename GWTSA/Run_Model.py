@@ -19,9 +19,9 @@ forcing = 'Test_Data/KNMI_Bilt'
 ts = Model(bore, forcing, rows=[5,8], timestart=2000)
 
 #X0 = {'A': 400,'a': 400, 'n': 1.5,'Alpha': 0.5, 'S_cap': -0.50, 'K_sat':-2, 'Beta': 1.5, 'D': -3, 'f': -0.1} # initial parameters
-X0 = {'A': 1000,'a': 400, 'n': 1.75,'Alpha': 2, 'S_cap': -0.00, 'K_sat':-1, 'Beta': 1.5, 'D': -3, 'f': -0.1} # initial parameters
+X0 = {'A': 3.0,'a': 2.6, 'n': 1.75,'Alpha': 2, 'S_cap': -0.00, 'K_sat':-1, 'Beta': 1.5, 'D': -3, 'f': -0.1} # initial parameters
 
-ts.solve('TFN2', X0, method = 1, correlation = 0)
+ts.solve('TFN2', X0, method=1, correlation=0)
 
 ts.simulate('TFN2', ts.parameters_opt)
 
@@ -44,3 +44,6 @@ Parameters = [2.6, 10.0, 1.35, 17.0, 1.0, 0.0, -3.0, 2.0, -3.0]'''
 #plt.colorbar()
 
 ts.plot_results()
+ts.plot_diagnostics()
+
+
