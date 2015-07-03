@@ -147,7 +147,8 @@ def TFN4(parameters,InputData, solver = 0):
     #Recharge model
     recharge = percolation(time_model, P, E, S_cap, K_sat, Beta, Imax , dt, solver = 0)[0]
     
-    Fs = A * gammainc(n, time_model/a) # Step response function based on pearsonIII
+    #Fs = A * gammainc(n, time_model/a) # Step response function based on pearsonIII
+    Fs = np.cumsum(A*time_model**(n-1)*np.exp(-time_model/a))
     Fb = Fs[1:] - Fs[0:-1] #block reponse function
     head_modeled = d + np.convolve(recharge,Fb)
     residuals = head_observed - head_modeled[time_observed]

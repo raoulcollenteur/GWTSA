@@ -125,7 +125,7 @@ class Model:
         if method == 0:
             self.parameters_opt= fmin(self.swsi, initial_parameters, args= (InputData,), callback=save_par, maxiter= 10000)
         elif method == 1: 
-            res = cma.fmin(self.swsi, initial_parameters, 2.0, args=(InputData,), options={'ftarget': 1e-1})
+            res = cma.fmin(self.swsi, initial_parameters, 0.5, args=(InputData,), options={'ftarget': 1e-1})
             self.parameters_opt = res[0]
             self.res = res # NOT USED, BUT MIGHT INCLUDE THE PARAMETERS
             self.parameters = np.loadtxt('outcmaesxrecentbest.dat', skiprows=2)[:,5:]
@@ -133,8 +133,6 @@ class Model:
 
         if correlation == 0 and method == 1:
             self.correlation_matrix = res[-2].correlation_matrix()
-            print 'The Correlation Matrix:'
-            print self.correlation_matrix
         
     def monte_carlo(self, TFN, X0, n=1000):
         """
@@ -256,7 +254,10 @@ class Model:
         
         # Plot the Impulse Response Function
         ax4 = plt.subplot(gs[0,-1])    
-        Fs = self.parameters_opt[0] * gammainc(self.parameters_opt[2], self._time_model/self.parameters_opt[1])
+        A = 10**self.parameters_opt[0]
+        a = 10**self.parameters_opt[1]
+        #Fs = A * gammainc(self.parameters_opt[2], self._time_model/a)
+        Fs = np.cumsum(A*self._time_model**(self.parameters_opt[2]-1.0)*np.exp(-self._time_model/a))  
         Fb = Fs[1:] - Fs[0:-1]
         plt.plot(self._time_model[0:-1],Fb)
         plt.xlim(0,np.where(np.cumsum(Fb)>0.999*sum(Fb))[0][0]) # cut off plot after 99.9% of the response
@@ -280,7 +281,7 @@ class Model:
         plt.text(0.05, 0.20, 'Average deviation: %.2f meter' %self.avg_dev, fontsize=12)  
 
     def plot_diagnostics(self):
-        plt.figure()
+        plt.figure(figsize=(15,9))
         gs = plt.GridSpec(4,4, wspace=0.4, hspace=0.4)
         plt.suptitle('GWTSA Parameter diagnostics', fontsize=16, fontweight='bold')
         
@@ -289,21 +290,24 @@ class Model:
         plt.plot(self.parameters)
         plt.title('parameters evolution')
         plt.ylabel('parameter value')
-        plt.ylabel('iteration')
+        plt.xlabel('iteration')
         
         try:
             self.correlation_matrix
             ax2 = plt.subplot(gs[0:2,2:4])
             plt.pcolormesh(self.correlation_matrix, cmap='coolwarm', alpha=0.6)
-            ax2.set_xticklabels(self.Parameter_Names, rotation=40, ha='right')
-            ax2.set_yticklabels(self.Parameter_Names, rotation=40, va='bottom')
+            plt.xticks(np.arange(0.5,len(self.correlation_matrix)+0.5,1),self.Parameter_Names, rotation=40, ha='right')
+            plt.yticks(np.arange(0.5,len(self.correlation_matrix)+0.5,1),self.Parameter_Names, rotation=40, ha='right')
             plt.colorbar()
             plt.title('correlation matrix')
+            
+            for (i, j), z in np.ndenumerate(self.correlation_matrix):
+                plt.text(j+0.5, i+0.5, '{:0.2f}'.format(z), ha='center', va='center', color='darkslategrey')
+                
         except:
             pass
         
         ax3 = plt.subplot(gs[2:4,0:2])
-        
         
         ax4 = plt.subplot(gs[2:4,2:4])  
         ax4.xaxis.set_visible(False)
