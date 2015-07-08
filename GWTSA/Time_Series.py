@@ -108,8 +108,8 @@ class Model:
         elif TFN == 'TFN3':
             initial_parameters = [X0['A'],X0['a'],X0['n'],np.mean(self.head_observed),X0['Alpha']]
         elif TFN == 'TFN4':
-            initial_parameters = [X0['A'],X0['a'],X0['n'],np.mean(self.head_observed),X0['Alpha'],X0['S_cap'],X0['K_sat'], X0['Beta'], X0['D']]
-            self.Parameter_Names = ['A','a','n','d','alpha','S_cap', 'K_sat','Beta','D']
+            initial_parameters = [X0['A'],X0['a'],X0['n'],np.mean(self.head_observed),X0['Alpha'],X0['S_cap'],X0['K_sat'], X0['Beta']]
+            self.Parameter_Names = ['A','a','n','d','alpha','S_cap', 'K_sat','Beta']
         else:
             print 'Error: TFN model does not exist, chose another one or check TFN_Model.py!'
         
@@ -123,9 +123,9 @@ class Model:
             self.parameters = np.vstack((self.parameters, par))
         
         if method == 0:
-            self.parameters_opt= fmin(self.swsi, initial_parameters, args= (InputData,), callback=save_par, maxiter= 10000)
+            self.parameters_opt= fmin(self.swsi, initial_parameters, args=(InputData,), callback=save_par)
         elif method == 1: 
-            res = cma.fmin(self.swsi, initial_parameters, 0.5, args=(InputData,), options={'ftarget': 1e-1})
+            res = cma.fmin(self.swsi, initial_parameters, 2.0, args=(InputData,), options={'ftarget': 1e-5})
             self.parameters_opt = res[0]
             self.res = res # NOT USED, BUT MIGHT INCLUDE THE PARAMETERS
             self.parameters = np.loadtxt('outcmaesxrecentbest.dat', skiprows=2)[:,5:]
@@ -192,18 +192,32 @@ class Model:
 
     '''This section contains the objective functions and diagnostic tests.'''
 
-#%% swsi constitutes the adapted version of the Sum of weighted squared innovations (swsi) developed by asmuth et al. (2005). For large values of alpha and small timesteps the numerator approaches zero. Therefore, Peterson et al. (2014) adapted the swsi function, making the numerator a natural log and changing the product operator to a summations.
+#%% swsi constitutes the adapted version of the Sum of weighted squared innovations (swsi) developed by asmuth et al. (2005). For large values of alpha and small timesteps the numerator approaches zero. Therefore, Peterson et al. (2014) adapted the swsi function, making the numerator a natural log and changing the product operator to a summation.
    
-    def swsi(self, parameters, InputData):
+    def swsi(self, parameters, InputData, solver=1):
         TFN = InputData[0]
         spinup = np.where(InputData[5]  > InputData[7])[0][0] # Where 
-        innovation = TFN(parameters, InputData, solver=0)[1][spinup:-1:3]
+        innovation = TFN(parameters, InputData, solver=solver)[1][spinup:-1:2]
         N = len(innovation)
-        alpha = 10**parameters[4]
+        alpha = 1.15**parameters[4]
         dt = InputData[6][-N:]
         x = np.exp(sum(np.log(1 - np.exp(-2.0  / alpha * dt)))*(1.0/N))
         swsi = sum( (x / (1 - np.exp(-2.0 / alpha * dt ))) * innovation**2)
-        return swsi 
+        return swsi
+#        
+#    def swsi(self, parameters, InputData, solver=1):
+#        TFN = InputData[0]
+#        spinup = np.where(InputData[5]  > InputData[7])[0][0] # Where 
+#        self.head_modeled, innovation = TFN(parameters, InputData, solver=solver)[0:2]
+#        innovation = innovation[spinup:-1:3]
+#        i = self._time_observed > self._time_start
+#        self.rmse = np.sqrt(sum((self.head_modeled[self._time_observed[i]]-self.head_observed[i])**2) / len(self.head_observed[i]))
+#        N = len(innovation)
+#        alpha = 1.2**parameters[4]
+#        dt = InputData[6][-N:]
+#        x = np.exp(sum(np.log(1 - np.exp(-2.0  / alpha * dt)))*(1.0/N))
+#        swsi = sum( (x / (1 - np.exp(-2.0 / alpha * dt ))) * innovation**2) + self.rmse
+#        return swsi
               
 #%% In this section the functions are defined that relate to the plotting of different forcings and results. Each function starts with plot_function to be able to quickly find these modules.        
 
@@ -243,6 +257,8 @@ class Model:
         ax2.xaxis.set_visible(False)         
         plt.legend(['Observed Head','Modeled Head'], loc=0)
         plt.ylabel('Groundwater head [m]')
+        plt.axvline(md.num2date(self._time_begin + self._time_start), c='grey', linestyle='--', label='Spinup period')
+        plt.text(md.num2date(self._time_begin + self._time_start), 0.0, 'Spinup period2')  # Not working yet?!
               
         # Plot the residuals and innovations  
         ax3 = plt.subplot(gs[2,:-1])      
@@ -256,8 +272,7 @@ class Model:
         ax4 = plt.subplot(gs[0,-1])    
         A = 10**self.parameters_opt[0]
         a = 10**self.parameters_opt[1]
-        #Fs = A * gammainc(self.parameters_opt[2], self._time_model/a)
-        Fs = np.cumsum(A*self._time_model**(self.parameters_opt[2]-1.0)*np.exp(-self._time_model/a))  
+        Fs = A * gammainc(self.parameters_opt[2], self._time_model/a)
         Fb = Fs[1:] - Fs[0:-1]
         plt.plot(self._time_model[0:-1],Fb)
         plt.xlim(0,np.where(np.cumsum(Fb)>0.999*sum(Fb))[0][0]) # cut off plot after 99.9% of the response
@@ -291,6 +306,7 @@ class Model:
         plt.title('parameters evolution')
         plt.ylabel('parameter value')
         plt.xlabel('iteration')
+        plt.legend(self.Parameter_Names)
         
         try:
             self.correlation_matrix

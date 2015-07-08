@@ -14,9 +14,6 @@ dS/ Dt = P[t+1] * (1 - (S[t] / S_cap)**Beta)- E_p * min(1, S/0.5S_cap)
 The Soil module is solved with an implicit euler and Newton Raphson iteration. The initial guesstimate for the the NR-iteration is provided by an Explicit Euler solution of the above differential equation. 
 
 -------------------------------------To Do:
-    - Solve the Zero Division error by applying a bisection method
-    - Solve when S[t+1] > S_Cap or S[t+1] < 0.00
-    - Compile a C-file of this functin for quick calculation using Cython
     - Built in more external / internal checks for water balance
 
 -------------------------------------References:     
@@ -42,21 +39,18 @@ cdef inline double c_max(double a, double b): return a if a >= b else b
 cdef inline double c_min(double a, double b): return a if a <= b else b
 
 
-def percolation(np.ndarray[np.int_t] Time_Model, np.ndarray[np.float_t, ndim=1] P, np.ndarray[np.float_t, ndim=1] E, double S_cap = 1.0, double K_sat = -1.5, double Beta = 2.0, double Imax = -3, int dt = 1, int solver = 0):
+def percolation(np.ndarray[np.int_t] Time_Model, np.ndarray[np.float_t, ndim=1] P, np.ndarray[np.float_t, ndim=1] E, double S_cap = 0.1, double K_sat = 0.03, double Beta = 2.0, double Imax = 0.001, int dt = 1, int solver = 1):
     
     cdef int t, iteration, bisection, n
     cdef double error, Last_S, g, g_derivative, a, b, c
     
     n = len(Time_Model) / dt
 
-    K_sat = 10.0**K_sat
-    S_cap = 10.0**S_cap
-    Imax = 10.0**Imax
     error = 1.0e-5
     
     # Create an empty array to store the soil state in
     cdef np.ndarray[np.float_t] S = np.zeros(n)
-    S[0] = 0.5 * S_cap   #Set the initial system state
+    S[0] = 0.25 * S_cap   #Set the initial system state
     cdef np.ndarray[np.float_t] Si = np.zeros(n)
     Si[0] = 0.0
     cdef np.ndarray[np.float_t] Pe = np.zeros(n)
@@ -131,6 +125,6 @@ def percolation(np.ndarray[np.int_t] Time_Model, np.ndarray[np.float_t, ndim=1] 
         
         S[t+1] = c_min(S_cap, c_max(0.0,S[t+1])) #Make sure the solution is larger then 0.0 and smaller than S_cap
         
-    cdef np.ndarray[np.float_t] R = np.append(0.0, K_sat * dt / 2 * ((S[:-1] + S[1:]) / S_cap) ** Beta )  
+    cdef np.ndarray[np.float_t] R = np.append(0.0, K_sat * dt * 0.5 * ((S[:-1]**Beta + S[1:] ** Beta) / (S_cap **Beta)))  
     
     return R, S

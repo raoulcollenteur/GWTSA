@@ -1,20 +1,19 @@
 \documentclass[a4paper,12pt]{book}
 \usepackage[utf8]{inputenc}
+\usepackage{url}
+\setlength{\parskip}{12pt}
 \usepackage{graphicx}
 
 \begin{document}
-
-\author{R.A. Collenteur}
-\title{Simple Book Example}
-\date{January 2013}
-
+	
 \frontmatter
-\maketitle
+\include{./cover}
 \tableofcontents
 
 \mainmatter
-\include{./TeX_files/chapter01}
-\include{./TeX_files/chapter02}
+\include{./Introduction}
+\include{./Installation}
+\include{./Setup}
 
 \backmatter
 % bibliography, glossary and index would go here.

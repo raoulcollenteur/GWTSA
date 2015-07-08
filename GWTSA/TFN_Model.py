@@ -123,17 +123,17 @@ def TFN3(parameters,InputData):
 ''' TFN4 has the non-linear unsaturated zone model to calculate the recharge  
 '''    
     
-def TFN4(parameters,InputData, solver = 0):
+def TFN4(parameters,InputData, solver=1):
     # Unpack all the parameters that should be calibrated
     A = 10**parameters[0]
     a = 10**parameters[1]
     n = parameters[2]
     d = parameters[3]
-    alpha = 10**parameters[4]
-    S_cap = parameters[5]
-    K_sat = parameters[6]
+    alpha = 1.15**parameters[4]
+    S_cap = 10**parameters[5]
+    K_sat = 10**parameters[6]
     Beta = parameters [7]
-    Imax = -3 #parameters[8]
+    Imax = 10**-3.0 #parameters[8]
 
     # unpack all the data that is needed for the simulation
     time_model = InputData[1]
@@ -143,12 +143,11 @@ def TFN4(parameters,InputData, solver = 0):
     time_observed = InputData[5] 
     time_step = InputData[6]
     dt= 1 
-  
-    #Recharge model
-    recharge = percolation(time_model, P, E, S_cap, K_sat, Beta, Imax , dt, solver = 0)[0]
     
-    #Fs = A * gammainc(n, time_model/a) # Step response function based on pearsonIII
-    Fs = np.cumsum(A*time_model**(n-1)*np.exp(-time_model/a))
+    #Recharge model
+    recharge = percolation(time_model, P, E, S_cap, K_sat, Beta, Imax , dt, solver=solver)[0]
+    
+    Fs = A * gammainc(n, time_model/a) # Step response function based on pearsonIII
     Fb = Fs[1:] - Fs[0:-1] #block reponse function
     head_modeled = d + np.convolve(recharge,Fb)
     residuals = head_observed - head_modeled[time_observed]
