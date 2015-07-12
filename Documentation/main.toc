@@ -1,7 +1,30 @@
+\contentsline {section}{\numberline {0.1}Acknowledgements / Preface}{ii}
+\contentsline {section}{\numberline {0.2}Changes Log}{iii}
+\contentsline {section}{\numberline {0.3}To Do:}{iii}
+\contentsline {chapter}{License}{v}
 \contentsline {chapter}{\numberline {1}Introduction to GWTSA}{1}
+\contentsline {section}{\numberline {1.1}What is Time Series Analysis?}{1}
+\contentsline {section}{\numberline {1.2}What can it be used for?}{1}
 \contentsline {chapter}{\numberline {2}Installation}{3}
-\contentsline {subsection}{\numberline {2.0.1}Where to get GWTSA?}{3}
-\contentsline {subsection}{\numberline {2.0.2}Installing on a Mac}{3}
-\contentsline {subsection}{\numberline {2.0.3}Installing on Windows (Experimental)}{3}
-\contentsline {subsection}{\numberline {2.0.4}Installing on other Operating Systems}{3}
-\contentsline {subsection}{\numberline {2.0.5}Compiling the Unsaturated Zone Module using Cython}{3}
+\contentsline {section}{\numberline {2.1}Where to get GWTSA?}{3}
+\contentsline {section}{\numberline {2.2}Python}{3}
+\contentsline {section}{\numberline {2.3}Installing on a Mac}{4}
+\contentsline {section}{\numberline {2.4}Installing on Windows (Experimental)}{4}
+\contentsline {section}{\numberline {2.5}Installing on other Operating Systems}{4}
+\contentsline {section}{\numberline {2.6}Compiling the Unsaturated Zone Module using Cython}{5}
+\contentsline {chapter}{\numberline {3}Setting up the model}{7}
+\contentsline {section}{\numberline {3.1}Setup}{8}
+\contentsline {section}{\numberline {3.2}Solve}{8}
+\contentsline {section}{\numberline {3.3}Plot\_results}{9}
+\contentsline {section}{\numberline {3.4}Plot\_diagnostics}{10}
+\contentsline {section}{\numberline {3.5}Example script}{10}
+\contentsline {chapter}{\numberline {4}Advanced GWTSA methods}{13}
+\contentsline {section}{\numberline {4.1}Options for the Setup Function}{13}
+\contentsline {section}{\numberline {4.2}Options for the Solve Function}{13}
+\contentsline {section}{\numberline {4.3}Checking the Unsaturated Zone}{13}
+\contentsline {chapter}{\numberline {5}Implementation}{15}
+\contentsline {section}{\numberline {5.1}Objective Function Revisited}{15}
+\contentsline {section}{\numberline {5.2}Appendix B: Solving the Soil model}{16}
+\contentsline {chapter}{\numberline {6}Appendices}{19}
+\contentsline {subsection}{\numberline {6.0.1}A: Example File Forcing input format}{19}
+\contentsline {subsection}{\numberline {6.0.2}B: Example File Observed Head input format}{19}

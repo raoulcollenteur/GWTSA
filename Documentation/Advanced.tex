@@ -1,0 +1,31 @@
+\chapter{Advanced GWTSA methods}
+
+\section{Options for the Setup Function}
+
+\textbf{Python code}
+\begin{lstlisting}
+ts.setup( 'GW_Levels.txt', 'Climate.txt', rows=[2,2], timestart=2000 gw_unit=1.0, cl_unit=10000.0)
+\end{lstlisting}
+
+\begin{itemize}
+	\item{}
+\end{itemize}
+
+
+
+\section{Options for the Solve Function}
+
+\textbf{Python code}
+\begin{lstlisting}
+
+X0 = {'A': 20,'a': 10, 'n': 1.5,'Alpha':40}
+ts.solve('Nonlinear', X0, method=0)
+
+\end{lstlisting}
+
+\begin{itemize}
+	\item{}
+\end{itemize}
+
+\section{Checking the Unsaturated Zone}
+

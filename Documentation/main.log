@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.15 (TeX Live 2014) (preloaded format=pdflatex 2015.2.27)  8 JUL 2015 14:23
+This is pdfTeX, Version 3.14159265-2.6-1.40.15 (TeX Live 2014) (preloaded format=pdflatex 2015.2.27)  12 JUL 2015 18:35
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -8,8 +8,8 @@ LaTeX2e <2014/05/01>
 Babel <3.9k> and hyphenation patterns for 78 languages loaded.
 (/usr/local/texlive/2014/texmf-dist/tex/latex/base/book.cls
 Document Class: book 2007/10/19 v1.4h Standard LaTeX document class
-(/usr/local/texlive/2014/texmf-dist/tex/latex/base/bk12.clo
-File: bk12.clo 2007/10/19 v1.4h Standard LaTeX file (size option)
+(/usr/local/texlive/2014/texmf-dist/tex/latex/base/bk11.clo
+File: bk11.clo 2007/10/19 v1.4h Standard LaTeX file (size option)
 )
 \c@part=\count79
 \c@chapter=\count80
@@ -241,6 +241,13 @@ Now handling font encoding U ...
    defining Unicode char U+2122 (decimal 8482)
    defining Unicode char U+2423 (decimal 9251)
 ))
+(/usr/local/texlive/2014/texmf-dist/tex/latex/natbib/natbib.sty
+Package: natbib 2010/09/13 8.31b (PWD, AO)
+\bibhang=\skip43
+\bibsep=\skip44
+LaTeX Info: Redefining \cite on input line 694.
+\c@NAT@ctr=\count88
+)
 (/usr/local/texlive/2014/texmf-dist/tex/latex/url/url.sty
 \Urlmuskip=\muskip10
 Package: url 2013/09/16  ver 3.4  Verb mode for urls, etc.
@@ -272,41 +279,75 @@ Package: infwarerr 2010/04/08 v1.3 Providing info/warning/error messages (HO)
 (/usr/local/texlive/2014/texmf-dist/tex/generic/oberdiek/ltxcmds.sty
 Package: ltxcmds 2011/11/09 v1.22 LaTeX kernel commands for general use (HO)
 )
-\Gread@gobject=\count88
+\Gread@gobject=\count89
 ))
 \Gin@req@height=\dimen103
 \Gin@req@width=\dimen104
 )
-(./main.aux (./cover.aux) (./Introduction.aux) (./Installation.aux)
-(./Setup.aux))
+(/usr/local/texlive/2014/texmf-dist/tex/latex/listings/listings.sty
+\lst@mode=\count90
+\lst@gtempboxa=\box26
+\lst@token=\toks17
+\lst@length=\count91
+\lst@currlwidth=\dimen105
+\lst@column=\count92
+\lst@pos=\count93
+\lst@lostspace=\dimen106
+\lst@width=\dimen107
+\lst@newlines=\count94
+\lst@lineno=\count95
+\lst@maxwidth=\dimen108
+
+(/usr/local/texlive/2014/texmf-dist/tex/latex/listings/lstmisc.sty
+File: lstmisc.sty 2014/03/04 1.5c (Carsten Heinz)
+\c@lstnumber=\count96
+\lst@skipnumbers=\count97
+\lst@framebox=\box27
+)
+(/usr/local/texlive/2014/texmf-dist/tex/latex/listings/listings.cfg
+File: listings.cfg 2014/03/04 1.5c listings configuration
+))
+Package: listings 2014/03/04 1.5c (Carsten Heinz)
+
+(/usr/local/texlive/2014/texmf-dist/tex/latex/graphics/color.sty
+Package: color 2014/04/23 v1.1a Standard LaTeX Color (DPC)
+
+(/usr/local/texlive/2014/texmf-dist/tex/latex/latexconfig/color.cfg
+File: color.cfg 2007/01/18 v1.5 color configuration of teTeX/TeXLive
+)
+Package color Info: Driver file: pdftex.def on input line 137.
+)
+(./main.aux (./cover.aux) (./Acknowledgement.aux) (./Changes.aux)
+(./License.aux) (./Introduction.aux) (./Installation.aux) (./Setup.aux)
+(./Advanced.aux) (./Theory.aux) (./Implementation.aux) (./Appendices.aux))
 \openout1 = `main.aux'.
 
-LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 7.
-LaTeX Font Info:    ... okay on input line 7.
-LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 7.
-LaTeX Font Info:    ... okay on input line 7.
-LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 7.
-LaTeX Font Info:    ... okay on input line 7.
-LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 7.
-LaTeX Font Info:    ... okay on input line 7.
-LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 7.
-LaTeX Font Info:    ... okay on input line 7.
-LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 7.
-LaTeX Font Info:    ... okay on input line 7.
+LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 38.
+LaTeX Font Info:    ... okay on input line 38.
+LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 38.
+LaTeX Font Info:    ... okay on input line 38.
+LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 38.
+LaTeX Font Info:    ... okay on input line 38.
+LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 38.
+LaTeX Font Info:    ... okay on input line 38.
+LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 38.
+LaTeX Font Info:    ... okay on input line 38.
+LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 38.
+LaTeX Font Info:    ... okay on input line 38.
 
 (/usr/local/texlive/2014/texmf-dist/tex/context/base/supp-pdf.mkii
 [Loading MPS to PDF converter (version 2006.09.02).]
-\scratchcounter=\count89
-\scratchdimen=\dimen105
-\scratchbox=\box26
-\nofMPsegments=\count90
-\nofMParguments=\count91
-\everyMPshowfont=\toks17
-\MPscratchCnt=\count92
-\MPscratchDim=\dimen106
-\MPnumerator=\count93
-\makeMPintoPDFobject=\count94
-\everyMPtoPDFconversion=\toks18
+\scratchcounter=\count98
+\scratchdimen=\dimen109
+\scratchbox=\box28
+\nofMPsegments=\count99
+\nofMParguments=\count100
+\everyMPshowfont=\toks18
+\MPscratchCnt=\count101
+\MPscratchDim=\dimen110
+\MPnumerator=\count102
+\makeMPintoPDFobject=\count103
+\everyMPtoPDFconversion=\toks19
 ) (/usr/local/texlive/2014/texmf-dist/tex/generic/oberdiek/pdftexcmds.sty
 Package: pdftexcmds 2011/11/29 v0.20 Utility functions of pdfTeX for LuaTeX (HO
 )
@@ -355,43 +396,81 @@ G,.JBIG2,.JB2,.eps]
 File: epstopdf-sys.cfg 2010/07/13 v1.3 Configuration of (r)epstopdf for TeX Liv
 e
 ))
+\c@lstlisting=\count104
 \openout2 = `./cover.aux'.
 
 
-(./cover.tex <Logo.png, id=1, 1115.16624pt x 958.58125pt>
-File: Logo.png Graphic file (type png)
- <use Logo.png>
-Package pdftex.def Info: Logo.png used on input line 7.
-(pdftex.def)             Requested size: 155.99762pt x 134.08344pt.
+(./cover.tex <./Figures/Logo.png, id=1, 1115.16624pt x 958.58125pt>
+File: ./Figures/Logo.png Graphic file (type png)
 
-[1
-
-
+<use ./Figures/Logo.png>
+Package pdftex.def Info: ./Figures/Logo.png used on input line 7.
+(pdftex.def)             Requested size: 143.9978pt x 123.77158pt.
+ [1
 
 
-{/usr/local/texlive/2014/texmf-var/fonts/map/pdftex/updmap/pdftex.map} <./Logo.
-png>]) [2
+
+
+{/usr/local/texlive/2014/texmf-var/fonts/map/pdftex/updmap/pdftex.map} <./Figur
+es/Logo.png>])
+\openout2 = `./Acknowledgement.aux'.
+
+ (./Acknowledgement.tex
+LaTeX Font Info:    External font `cmex10' loaded for size
+(Font)              <10.95> on input line 8.
+LaTeX Font Info:    External font `cmex10' loaded for size
+(Font)              <8> on input line 8.
+LaTeX Font Info:    External font `cmex10' loaded for size
+(Font)              <6> on input line 8.
+) [2
+
+
+]
+\openout2 = `./Changes.aux'.
+
+
+(./Changes.tex
+LaTeX Font Info:    Try loading font information for OMS+cmr on input line 3.
+ (/usr/local/texlive/2014/texmf-dist/tex/latex/base/omscmr.fd
+File: omscmr.fd 1999/05/25 v2.5h Standard LaTeX font definitions
+)
+LaTeX Font Info:    Font shape `OMS/cmr/m/n' in size <10.95> not available
+(Font)              Font shape `OMS/cmsy/m/n' tried instead on input line 3.
+)
+[3
+
+
+]
+\openout2 = `./License.aux'.
+
+ (./License.tex [4
+
+
+
+])
+Overfull \hbox (3.88539pt too wide) in paragraph at lines 2--44
+\OT1/cmr/m/n/10.95 GWTSA Soft-ware is pub-lished un-der a GNU GEN-ERAL PUB-LIC 
+LI-CENSE.
+ []
+
+[5] [6
 
 
 ] (./main.toc
-LaTeX Font Info:    External font `cmex10' loaded for size
-(Font)              <12> on input line 3.
-LaTeX Font Info:    External font `cmex10' loaded for size
-(Font)              <8> on input line 3.
-LaTeX Font Info:    External font `cmex10' loaded for size
-(Font)              <6> on input line 3.
-)
+Underfull \vbox (badness 6542) has occurred while \output is active []
+
+ [7])
 \tf@toc=\write3
 \openout3 = `main.toc'.
 
- [3] [4
 
-]
+[8]
 \openout2 = `./Introduction.aux'.
 
  (./Introduction.tex
 Chapter 1.
 ) [1
+
 
 
 ]
@@ -403,43 +482,644 @@ Chapter 1.
 
 ]
 Chapter 2.
+
+Overfull \hbox (39.49013pt too wide) in paragraph at lines 7--8
+\OT1/cmr/m/n/10.95 ($\OT1/cmtt/m/n/10.95 https : / / www . enthought . com$\OT1
+/cmr/m/n/10.95 ) or the Ana-conda dis-tri-bu-tions ($\OT1/cmtt/m/n/10.95 http :
+ / / continuum .
+ []
+
+
+Overfull \hbox (26.56334pt too wide) in paragraph at lines 9--10
+\OT1/cmr/m/n/10.95 ploratory com-put-ing with Python' ($\OT1/cmtt/m/n/10.95 htt
+p : / / mbakker7 . github . io / exploratory _
+ []
+
 [3]
-LaTeX Font Info:    Try loading font information for OMS+cmr on input line 19.
- (/usr/local/texlive/2014/texmf-dist/tex/latex/base/omscmr.fd
-File: omscmr.fd 1999/05/25 v2.5h Standard LaTeX font definitions
-)
-LaTeX Font Info:    Font shape `OMS/cmr/m/n' in size <12> not available
-(Font)              Font shape `OMS/cmsy/m/n' tried instead on input line 19.
- [4]) [5]
+Overfull \hbox (43.64487pt too wide) in paragraph at lines 17--18
+[]\OT1/cmr/m/n/10.95 Add 'ex-port PYTHON-PATH=$PYTHONPATH:/your/Folder/With/GWT
+SA' 
+ []
+
+
+Overfull \hbox (2.2482pt too wide) in paragraph at lines 18--19
+[]\OT1/cmr/m/n/10.95 Type $\OML/cmm/m/it/10.95 source \OMS/cmsy/m/n/10.95 ^^X \
+OML/cmm/m/it/10.95 =:bash[]profile$ \OT1/cmr/m/n/10.95 to di-rectly ex-e-cute y
+our new bash[]profile 
+ []
+
+[4]
+Overfull \hbox (22.38141pt too wide) has occurred while \output is active
+\OT1/cmr/m/sl/10.95 2.6.  COMPILING THE UNSATURATED ZONE MODULE USING CYTHON \O
+T1/cmr/m/n/10.95 5
+ []
+
+[5]) [6]
 \openout2 = `./Setup.aux'.
 
+ (./Setup.tex
+Chapter 3.
+<Figures/GWTSA_Flow.png, id=59, 502.08632pt x 114.11052pt>
+File: Figures/GWTSA_Flow.png Graphic file (type png)
 
-(./Setup.tex) [6
+<use Figures/GWTSA_Flow.png>
+Package pdftex.def Info: Figures/GWTSA_Flow.png used on input line 7.
+(pdftex.def)             Requested size: 360.0pt x 81.8217pt.
+
+Underfull \vbox (badness 1152) has occurred while \output is active []
+
+ [7
+
+
+
+ <./Figures/GWTSA_Flow.png>] [8]
+<Figures/plot_results.png, id=67, 1283.79625pt x 778.91pt>
+File: Figures/plot_results.png Graphic file (type png)
+
+<use Figures/plot_results.png>
+Package pdftex.def Info: Figures/plot_results.png used on input line 40.
+(pdftex.def)             Requested size: 360.0pt x 218.41422pt.
+ [9 <./Figures/plot_results.png>]
+<Figures/plot_diagnostics.png, id=72, 1282.7925pt x 779.91376pt>
+File: Figures/plot_diagnostics.png Graphic file (type png)
+
+<use Figures/plot_diagnostics.png>
+Package pdftex.def Info: Figures/plot_diagnostics.png used on input line 51.
+(pdftex.def)             Requested size: 360.0pt x 218.87419pt.
+
+(/usr/local/texlive/2014/texmf-dist/tex/latex/listings/lstlang1.sty
+File: lstlang1.sty 2014/03/04 1.5c listings language file
+)
+LaTeX Font Info:    Font shape `OMS/cmr/m/n' in size <9> not available
+(Font)              Font shape `OMS/cmsy/m/n' tried instead on input line 60.
+LaTeX Font Info:    External font `cmex10' loaded for size
+(Font)              <9> on input line 68.
+LaTeX Font Info:    External font `cmex10' loaded for size
+(Font)              <5> on input line 68.
+ [10 <./Figures/plot_diagnostics.png>]) [11]
+\openout2 = `./Advanced.aux'.
+
+ (./Advanced.tex [12
+
+
+
+]
+Chapter 4.
+) [13]
+\openout2 = `./Theory.aux'.
+
+ (./Theory.tex)
+\openout2 = `./Implementation.aux'.
+
+ (./Implementation.tex [14
 
 
 
 
-] (./main.aux (./cover.aux) (./Introduction.aux)
-(./Installation.aux) (./Setup.aux)) ) 
+
+]
+Chapter 5.
+
+Package natbib Warning: Citation `peterson_nonlinear_2014' on page 15 undefined
+ on input line 4.
+
+
+Package natbib Warning: Citation `von_asmuth_modeling_2005' on page 15 undefine
+d on input line 4.
+
+
+Package natbib Warning: Citation `peterson_nonlinear_2014' on page 15 undefined
+ on input line 10.
+
+! Undefined control sequence.
+l.16 which is essentially the same as \eqref
+                                            {SWSI} when applying the mathema...
+The control sequence at the end of the top line
+of your error message was never \def'ed. If you have
+misspelled it (e.g., `\hobx'), type `I' and the correct
+spelling (e.g., `I\hbox'). Otherwise just continue,
+and I'll forget about whatever was undefined.
+
+
+Package natbib Warning: Citation `peterson_nonlinear_2014' on page 15 undefined
+ on input line 16.
+
+[15]
+! Undefined control sequence.
+l.31 ... solution for the percolation model \eqref
+                                                  {percolation} in detail, w...
+The control sequence at the end of the top line
+of your error message was never \def'ed. If you have
+misspelled it (e.g., `\hobx'), type `I' and the correct
+spelling (e.g., `I\hbox'). Otherwise just continue,
+and I'll forget about whatever was undefined.
+
+! Undefined control sequence.
+l.31 ...e solution of the piston flow model \eqref
+                                                  {pistonflow} is given and ...
+The control sequence at the end of the top line
+of your error message was never \def'ed. If you have
+misspelled it (e.g., `\hobx'), type `I' and the correct
+spelling (e.g., `I\hbox'). Otherwise just continue,
+and I'll forget about whatever was undefined.
+
+
+Package natbib Warning: Citation `kavetski_calibration_2006-1' on page 16 undef
+ined on input line 41.
+
+[16]
+! Undefined control sequence.
+l.56 ... for $  g(S^{t+1}) $ using equation \eqref
+                                                  {impeuler} :
+The control sequence at the end of the top line
+of your error message was never \def'ed. If you have
+misspelled it (e.g., `\hobx'), type `I' and the correct
+spelling (e.g., `I\hbox'). Otherwise just continue,
+and I'll forget about whatever was undefined.
+
+! Undefined control sequence.
+l.68 ...icit euler scheme to solve equation \eqref
+                                                  {percolation} (no derivati...
+The control sequence at the end of the top line
+of your error message was never \def'ed. If you have
+misspelled it (e.g., `\hobx'), type `I' and the correct
+spelling (e.g., `I\hbox'). Otherwise just continue,
+and I'll forget about whatever was undefined.
+
+Runaway argument?
+! Paragraph ended before \cases was complete.
+<to be read again> 
+                   \par 
+l.77 
+     
+I suspect you've forgotten a `}', causing me to apply this
+control sequence to too much text. How can we recover?
+My plan is to forget the whole thing and hope for the best.
+
+! Missing $ inserted.
+<inserted text> 
+                $
+l.77 
+     
+I've inserted a begin-math/end-math symbol since I think
+you left one out. Proceed, with fingers crossed.
+
+! Missing \endgroup inserted.
+<inserted text> 
+                \endgroup 
+l.77 
+     
+I've inserted something that you may have forgotten.
+(See the <inserted text> above.)
+With luck, this will get me unwedged. But if you
+really didn't forget anything, try typing `2' now; then
+my insertion and my current dilemma will both disappear.
+
+! Display math should end with $$.
+<to be read again> 
+                   \par 
+l.77 
+     
+The `$' that I just saw supposedly matches a previous `$$'.
+So I shall assume that you typed `$$' both times.
+
+! Missing $ inserted.
+<inserted text> 
+                $
+l.78 1 - \Delta
+               {t} \left\lgroup {  - K_{sat} \beta (\frac{S_i}{S_{cap}}) ^ {...
+I've inserted a begin-math/end-math symbol since I think
+you left one out. Proceed, with fingers crossed.
+
+! Misplaced alignment tab character &.
+l.78 ...S_{cap}}) ^ {\beta-1}  } \right\rgroup 		&
+                                                   \text{if } S^{t+1}_{i}) >...
+I can't figure out why you would want to use a tab mark
+here. If you just want an ampersand, the remedy is
+simple: Just type `I\&' now. But if some right brace
+up above has ended a previous alignment prematurely,
+you're probably due for more error messages, and you
+might try typing `S' now just to see what is salvageable.
+
+! Undefined control sequence.
+l.78 ...}}) ^ {\beta-1}  } \right\rgroup 		& \text
+                                                  {if } S^{t+1}_{i}) >= 0.5 ...
+The control sequence at the end of the top line
+of your error message was never \def'ed. If you have
+misspelled it (e.g., `\hobx'), type `I' and the correct
+spelling (e.g., `I\hbox'). Otherwise just continue,
+and I'll forget about whatever was undefined.
+
+! Missing $ inserted.
+<inserted text> 
+                $
+l.79 
+     
+I've inserted a begin-math/end-math symbol since I think
+you left one out. Proceed, with fingers crossed.
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 78--79
+
+ []
+
+! Missing $ inserted.
+<inserted text> 
+                $
+l.80 1 - \Delta
+               {t} \left\lgroup {  - K_{sat} \beta (\frac{S_i}{S_{cap}}) ^ {...
+I've inserted a begin-math/end-math symbol since I think
+you left one out. Proceed, with fingers crossed.
+
+! Misplaced alignment tab character &.
+l.80 ...ac{1}{0.5 S_{cap}} } \right\rgroup       &
+                                                   \text{if } S^{t+1}_{i}) <...
+I can't figure out why you would want to use a tab mark
+here. If you just want an ampersand, the remedy is
+simple: Just type `I\&' now. But if some right brace
+up above has ended a previous alignment prematurely,
+you're probably due for more error messages, and you
+might try typing `S' now just to see what is salvageable.
+
+! Undefined control sequence.
+l.80 ...0.5 S_{cap}} } \right\rgroup       & \text
+                                                  {if } S^{t+1}_{i}) < 0.5 S...
+The control sequence at the end of the top line
+of your error message was never \def'ed. If you have
+misspelled it (e.g., `\hobx'), type `I' and the correct
+spelling (e.g., `I\hbox'). Otherwise just continue,
+and I'll forget about whatever was undefined.
+
+
+! LaTeX Error: \begin{equation} on input line 74 ended by \end{cases}.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.81 \end{cases}
+                
+Your command was ignored.
+Type  I <command> <return>  to replace it with another command,
+or  <return>  to continue without it.
+
+! Missing $ inserted.
+<inserted text> 
+                $
+l.81 \end{cases}
+                
+I've inserted something that you may have forgotten.
+(See the <inserted text> above.)
+With luck, this will get me unwedged. But if you
+really didn't forget anything, try typing `2' now; then
+my insertion and my current dilemma will both disappear.
+
+! You can't use `\eqno' in horizontal mode.
+\endequation ->\eqno 
+                     \hbox {\@eqnnum }$$\@ignoretrue 
+l.82 \end{equation}
+                   
+Sorry, but I'm not programmed to handle this case;
+I'll just pretend that you didn't ask for it.
+If you're in the wrong mode, you might be able to
+return to the right one by typing `I}' or `I$' or `I\par'.
+
+
+! LaTeX Error: \begin{document} ended by \end{equation}.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.82 \end{equation}
+                   
+Your command was ignored.
+Type  I <command> <return>  to replace it with another command,
+or  <return>  to continue without it.
+
+! Missing $ inserted.
+<inserted text> 
+                $
+l.82 \end{equation}
+                   
+I've inserted something that you may have forgotten.
+(See the <inserted text> above.)
+With luck, this will get me unwedged. But if you
+really didn't forget anything, try typing `2' now; then
+my insertion and my current dilemma will both disappear.
+
+! Display math should end with $$.
+<to be read again> 
+                   \endgroup 
+l.82 \end{equation}
+                   
+The `$' that I just saw supposedly matches a previous `$$'.
+So I shall assume that you typed `$$' both times.
+
+! Extra \endgroup.
+<recently read> \endgroup 
+                          
+l.82 \end{equation}
+                   
+Things are pretty mixed up, but I think the worst is over.
+
+! Undefined control sequence.
+l.84 ...or reasons of readability. Equation \eqref
+                                                  {newtonraphson} is general...
+The control sequence at the end of the top line
+of your error message was never \def'ed. If you have
+misspelled it (e.g., `\hobx'), type `I' and the correct
+spelling (e.g., `I\hbox'). Otherwise just continue,
+and I'll forget about whatever was undefined.
+
+! Undefined control sequence.
+l.84 ... if this situation occurs, equation \eqref
+                                                  {g_function} is solved usi...
+The control sequence at the end of the top line
+of your error message was never \def'ed. If you have
+misspelled it (e.g., `\hobx'), type `I' and the correct
+spelling (e.g., `I\hbox'). Otherwise just continue,
+and I'll forget about whatever was undefined.
+
+! Missing $ inserted.
+<inserted text> 
+                $
+l.84 ... this situation occurs, equation \eqref{g_
+                                                  function} is solved using ...
+I've inserted a begin-math/end-math symbol since I think
+you left one out. Proceed, with fingers crossed.
+
+! Extra }, or forgotten $.
+l.84 ...uation occurs, equation \eqref{g_function}
+                                                   is solved using the compu...
+I've deleted a group-closing symbol because it seems to be
+spurious, as in `$x}$'. But perhaps the } is legitimate and
+you forgot something else, as in `\hbox{$x}'. In such cases
+the way to recover is to insert both the forgotten and the
+deleted material, e.g., by typing `I$}'.
+
+! Missing $ inserted.
+<inserted text> 
+                $
+l.85 
+     
+I've inserted a begin-math/end-math symbol since I think
+you left one out. Proceed, with fingers crossed.
+
+
+Overfull \hbox (165.26413pt too wide) in paragraph at lines 84--85
+\OT1/cmr/m/n/10.95 equa-tion g$[]\OML/cmm/m/it/10.95 unctionissolvedusingthecom
+putationallymoreexpensivebisectionmethodforthatspecifictimestep:$ 
+ []
+
+[17]
+! Undefined control sequence.
+l.86 ...{\prime}$ for the piston flow model \eqref
+                                                  {pistonflow} is as follows:
+The control sequence at the end of the top line
+of your error message was never \def'ed. If you have
+misspelled it (e.g., `\hobx'), type `I' and the correct
+spelling (e.g., `I\hbox'). Otherwise just continue,
+and I'll forget about whatever was undefined.
+
+Runaway argument?
+! Paragraph ended before \cases was complete.
+<to be read again> 
+                   \par 
+l.91 
+     
+I suspect you've forgotten a `}', causing me to apply this
+control sequence to too much text. How can we recover?
+My plan is to forget the whole thing and hope for the best.
+
+! Missing $ inserted.
+<inserted text> 
+                $
+l.91 
+     
+I've inserted a begin-math/end-math symbol since I think
+you left one out. Proceed, with fingers crossed.
+
+! Missing \endgroup inserted.
+<inserted text> 
+                \endgroup 
+l.91 
+     
+I've inserted something that you may have forgotten.
+(See the <inserted text> above.)
+With luck, this will get me unwedged. But if you
+really didn't forget anything, try typing `2' now; then
+my insertion and my current dilemma will both disappear.
+
+! Display math should end with $$.
+<to be read again> 
+                   \par 
+l.91 
+     
+The `$' that I just saw supposedly matches a previous `$$'.
+So I shall assume that you typed `$$' both times.
+
+! Missing $ inserted.
+<inserted text> 
+                $
+l.92 1 - \Delta
+               {t} \left\lgroup {  - (P-I) \beta (\frac{S_i}{S_{cap}}) ^ {\b...
+I've inserted a begin-math/end-math symbol since I think
+you left one out. Proceed, with fingers crossed.
+
+! Misplaced alignment tab character &.
+l.92 ...S_{cap}}) ^ {\beta-1}  } \right\rgroup 		&
+                                                   \text{if } S^{t+1}_{i}) >...
+I can't figure out why you would want to use a tab mark
+here. If you just want an ampersand, the remedy is
+simple: Just type `I\&' now. But if some right brace
+up above has ended a previous alignment prematurely,
+you're probably due for more error messages, and you
+might try typing `S' now just to see what is salvageable.
+
+! Undefined control sequence.
+l.92 ...}}) ^ {\beta-1}  } \right\rgroup 		& \text
+                                                  {if } S^{t+1}_{i}) >= 0.5 ...
+The control sequence at the end of the top line
+of your error message was never \def'ed. If you have
+misspelled it (e.g., `\hobx'), type `I' and the correct
+spelling (e.g., `I\hbox'). Otherwise just continue,
+and I'll forget about whatever was undefined.
+
+! Missing $ inserted.
+<inserted text> 
+                $
+l.93 
+     
+I've inserted a begin-math/end-math symbol since I think
+you left one out. Proceed, with fingers crossed.
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 92--93
+
+ []
+
+! Missing $ inserted.
+<inserted text> 
+                $
+l.94 1 - \Delta
+               {t} \left\lgroup {  - (P-I) \beta (\frac{S_i}{S_{cap}}) ^ {\b...
+I've inserted a begin-math/end-math symbol since I think
+you left one out. Proceed, with fingers crossed.
+
+! Misplaced alignment tab character &.
+l.94 ...ac{1}{0.5 S_{cap}} } \right\rgroup       &
+                                                   \text{if } S^{t+1}_{i}) <...
+I can't figure out why you would want to use a tab mark
+here. If you just want an ampersand, the remedy is
+simple: Just type `I\&' now. But if some right brace
+up above has ended a previous alignment prematurely,
+you're probably due for more error messages, and you
+might try typing `S' now just to see what is salvageable.
+
+! Undefined control sequence.
+l.94 ...0.5 S_{cap}} } \right\rgroup       & \text
+                                                  {if } S^{t+1}_{i}) < 0.5 S...
+The control sequence at the end of the top line
+of your error message was never \def'ed. If you have
+misspelled it (e.g., `\hobx'), type `I' and the correct
+spelling (e.g., `I\hbox'). Otherwise just continue,
+and I'll forget about whatever was undefined.
+
+
+! LaTeX Error: \begin{equation} on input line 88 ended by \end{cases}.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.95 \end{cases}
+                
+Your command was ignored.
+Type  I <command> <return>  to replace it with another command,
+or  <return>  to continue without it.
+
+! Missing $ inserted.
+<inserted text> 
+                $
+l.95 \end{cases}
+                
+I've inserted something that you may have forgotten.
+(See the <inserted text> above.)
+With luck, this will get me unwedged. But if you
+really didn't forget anything, try typing `2' now; then
+my insertion and my current dilemma will both disappear.
+
+! You can't use `\eqno' in horizontal mode.
+\endequation ->\eqno 
+                     \hbox {\@eqnnum }$$\@ignoretrue 
+l.96 \end{equation}
+                   
+Sorry, but I'm not programmed to handle this case;
+I'll just pretend that you didn't ask for it.
+If you're in the wrong mode, you might be able to
+return to the right one by typing `I}' or `I$' or `I\par'.
+
+
+! LaTeX Error: \begin{document} ended by \end{equation}.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.96 \end{equation}
+                   
+Your command was ignored.
+Type  I <command> <return>  to replace it with another command,
+or  <return>  to continue without it.
+
+! Missing $ inserted.
+<inserted text> 
+                $
+l.96 \end{equation}
+                   
+I've inserted something that you may have forgotten.
+(See the <inserted text> above.)
+With luck, this will get me unwedged. But if you
+really didn't forget anything, try typing `2' now; then
+my insertion and my current dilemma will both disappear.
+
+! Display math should end with $$.
+<to be read again> 
+                   \endgroup 
+l.96 \end{equation}
+                   
+The `$' that I just saw supposedly matches a previous `$$'.
+So I shall assume that you typed `$$' both times.
+
+! Missing } inserted.
+<inserted text> 
+                }
+l.96 \end{equation}
+                   
+I've inserted something that you may have forgotten.
+(See the <inserted text> above.)
+With luck, this will get me unwedged. But if you
+really didn't forget anything, try typing `2' now; then
+my insertion and my current dilemma will both disappear.
+
+! Extra \endgroup.
+<recently read> \endgroup 
+                          
+l.96 \end{equation}
+                   
+Things are pretty mixed up, but I think the worst is over.
+
+) [18]
+\openout2 = `./Appendices.aux'.
+
+ (./Appendices.tex
+Chapter 6.
+) [19
+
+
+
+] [20
+
+
+] (./main.bbl)
+
+Package natbib Warning: There were undefined citations.
+
+(./main.aux (./cover.aux) (./Acknowledgement.aux) (./Changes.aux)
+(./License.aux) (./Introduction.aux) (./Installation.aux) (./Setup.aux)
+(./Advanced.aux) (./Theory.aux) (./Implementation.aux) (./Appendices.aux)) ) 
 Here is how much of TeX's memory you used:
- 1849 strings out of 493117
- 25279 string characters out of 6135433
- 86128 words of memory out of 5000000
- 5267 multiletter control sequences out of 15000+600000
- 8714 words of font info for 31 fonts, out of 8000000 for 9000
+ 4162 strings out of 493117
+ 55346 string characters out of 6135433
+ 180422 words of memory out of 5000000
+ 7496 multiletter control sequences out of 15000+600000
+ 10542 words of font info for 37 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
- 37i,5n,23p,952b,245s stack positions out of 5000i,500n,10000p,200000b,80000s
-</usr/local/texlive/2014/texmf-dist/fonts/
-type1/public/amsfonts/cm/cmbx12.pfb></usr/local/texlive/2014/texmf-dist/fonts/t
-ype1/public/amsfonts/cm/cmr12.pfb></usr/local/texlive/2014/texmf-dist/fonts/typ
-e1/public/amsfonts/cm/cmr17.pfb></usr/local/texlive/2014/texmf-dist/fonts/type1
-/public/amsfonts/cm/cmsl12.pfb></usr/local/texlive/2014/texmf-dist/fonts/type1/
-public/amsfonts/cm/cmsy10.pfb></usr/local/texlive/2014/texmf-dist/fonts/type1/p
-ublic/amsfonts/cm/cmtt12.pfb>
-Output written on main.pdf (10 pages, 137939 bytes).
+ 38i,8n,44p,1045b,1829s stack positions out of 5000i,500n,10000p,200000b,80000s
+</u
+sr/local/texlive/2014/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx10.pfb></us
+r/local/texlive/2014/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx12.pfb></usr
+/local/texlive/2014/texmf-dist/fonts/type1/public/amsfonts/cm/cmex10.pfb></usr/
+local/texlive/2014/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi10.pfb></usr/l
+ocal/texlive/2014/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi6.pfb></usr/loc
+al/texlive/2014/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi8.pfb></usr/local
+/texlive/2014/texmf-dist/fonts/type1/public/amsfonts/cm/cmr10.pfb></usr/local/t
+exlive/2014/texmf-dist/fonts/type1/public/amsfonts/cm/cmr12.pfb></usr/local/tex
+live/2014/texmf-dist/fonts/type1/public/amsfonts/cm/cmr17.pfb></usr/local/texli
+ve/2014/texmf-dist/fonts/type1/public/amsfonts/cm/cmr6.pfb></usr/local/texlive/
+2014/texmf-dist/fonts/type1/public/amsfonts/cm/cmr8.pfb></usr/local/texlive/201
+4/texmf-dist/fonts/type1/public/amsfonts/cm/cmr9.pfb></usr/local/texlive/2014/t
+exmf-dist/fonts/type1/public/amsfonts/cm/cmsl10.pfb></usr/local/texlive/2014/te
+xmf-dist/fonts/type1/public/amsfonts/cm/cmsy10.pfb></usr/local/texlive/2014/tex
+mf-dist/fonts/type1/public/amsfonts/cm/cmsy6.pfb></usr/local/texlive/2014/texmf
+-dist/fonts/type1/public/amsfonts/cm/cmsy8.pfb></usr/local/texlive/2014/texmf-d
+ist/fonts/type1/public/amsfonts/cm/cmsy9.pfb></usr/local/texlive/2014/texmf-dis
+t/fonts/type1/public/amsfonts/cm/cmtt10.pfb>
+Output written on main.pdf (28 pages, 549953 bytes).
 PDF statistics:
- 64 PDF objects out of 1000 (max. 8388607)
- 43 compressed objects within 1 object stream
+ 176 PDF objects out of 1000 (max. 8388607)
+ 118 compressed objects within 2 object streams
  0 named destinations out of 1000 (max. 500000)
- 6 words of extra memory for PDF output out of 10000 (max. 10000000)
+ 21 words of extra memory for PDF output out of 10000 (max. 10000000)
 

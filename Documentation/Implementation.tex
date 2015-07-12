@@ -1,0 +1,106 @@
+\chapter{Implementation}
+
+\section{Objective Function Revisited}
+In this appendix it is shown that the modification proposed by \citet{peterson_nonlinear_2014} of the sum of weighted squared innovations (SWSI) objective function is mathematically similar to the original SWSI function introduced by \citet{von_asmuth_modeling_2005}. This function is defined as follows:
+
+\begin{equation} \label{SWSI}
+S^2(t,\beta) = \sum\limits_{j=1}^N \left\lgroup  \frac{ \sqrt[N]{ \prod\limits_{i=1}^N ( 1 - \exp^ \frac{-2 \Delta{t_i}}{\alpha} )  }}{ 1 - \exp^ \frac{-2 \Delta{t_j}}{\alpha} } \upsilon^2(\beta,t_j)    \right\rgroup
+\end{equation}
+
+When calibrating on long time series on with high frequency data, $N$ can become very large while the term $ 1 - \exp^( \frac{-2 \Delta{t_j}}{\alpha} $ becomes small. This can cause the product operator to near machine precision and return a value of 0.0 for the numerator. To solve this problem, \citet{peterson_nonlinear_2014} proposed to take the natural logarithm of $ { \sqrt[N]{ \prod\limits_{i=1}^N ( 1 - \exp^( \frac{-2 \Delta{t_i}}{\alpha} ) )  }} $
+
+\begin{equation}
+S^2(t,\beta) = \sum\limits_{j=1}^N \left\lgroup  \frac{ exp ^ { ln ({ \prod\limits_{i=1}^N ( 1 - \exp^ \frac{-2 \Delta{t_i}}{\alpha} )^ \frac{1}{N} ) } }}{ 1 - \exp^ \frac{-2 \Delta{t_j}}{\alpha} } \upsilon^2(\beta,t_j)    \right\rgroup
+\end{equation}
+
+which is essentially the same as \eqref{SWSI} when applying the mathematical rules $ ln(x^y) = y ln(x) $ and $ ln(ab) = ln(a) + ln(b) $. The final equation as proposed by \citet{peterson_nonlinear_2014} is then:
+
+\begin{equation} \label{SWSI_adapted}
+S^2(t,\beta) = \sum\limits_{j=1}^N \left\lgroup  \frac{ \frac{1}{N}{ \sum\limits_{i=1}^N ln( 1 - \exp^ \frac{-2 \Delta{t_i}}{\alpha} )  }}{ 1 - \exp^ \frac{-2 \Delta{t_j}}{\alpha} } \upsilon^2(\beta,t_j)    \right\rgroup
+\end{equation}
+
+As shown above, the two equations are mathematically similar. Numerically however, the adapted SWSI equation has a lower chance of running into machine precision causing calibration of the time series model to fail. Therefore, this equation is used as the objective function for parameter optimization. 
+
+
+% In this section the numerical mathematics for solving the soil models is discussed. 
+%
+%
+
+
+\section{Appendix B: Solving the Soil model}
+In this appendix, the numerical mathematics that have been used to solve the unsaturated zone model are discussed. The unsaturated zone is described by a non-linear differential equation of which no analytical solution exists, and hence has to be solved numerically. Two different unsaturated zone models have been applied in this research. Below we will derive the numerical solution for the percolation model \eqref{percolation} in detail, while the solution of the piston flow model \eqref{pistonflow} is given and can be derived in a similar way.
+
+\begin{equation} \label{percolation}
+\frac{dS}{dt} = (P-I)- K_{sat}\left( \frac{S(t)}{S_{cap}}\right) ^\beta - E_p min(1, \frac{S}{0.5S_{cap}})
+\end{equation}
+
+\begin{equation} \label{pistonflow}
+\frac{dS}{dt} = (P-I)(1-\left( \frac{S(t)}{S_{cap}}\right) ^\beta) - E_p min(1, \frac{S}{0.5S_{cap}})
+\end{equation}
+
+\citet{kavetski_calibration_2006-1} showed that for robust parameter optimization and calibration strategies, smoothness of the objective function is important. Therefore, the above equation is solved using the implicit Euler scheme. For simplicity in the following derivation, we define:
+
+\begin{equation}
+f(S,t) = (P-I)- K_{sat}\left( \frac{S(t)}{S_{cap}}\right) ^\beta - E_p min(1, \frac{S}{0.5S_{cap}})
+\end{equation}
+
+Applying the implicit Euler scheme gives the following:
+
+\begin{equation}
+\frac{S^{t+1}-S^t}{\Delta{t}} = f(S^{t+1})\\
+\end{equation}
+\begin{equation} \label{impeuler}
+S^{t+1} = S^t + \Delta{t} * f(S^{t+1})
+\end{equation}
+
+This equation has to be solved iteratively, as $ S^{t+1} $ is unknown. The Newton-Raphson iteration method is used for this. Since the NR method is a root-finding technique that requires the form $ g(S^{t+1}) =0 $, we need to introduce a new equation for $  g(S^{t+1}) $ using equation \eqref{impeuler} :
+
+\begin{equation}\label{g_function}
+g(S^{t+1}) = S^{t+1} - S^t - \Delta{t} * f(S^{t+1}) = 0
+\end{equation}
+
+The equation for the Newton-Raphson iteration will than be:
+
+\label{key}\begin{equation} \label{newtonraphson}
+S^{t+1}_{i+1}=S^{t+1}_{i} - \frac{g(S^{t+1}_{i})}{g^{\prime} (S^{t+1}_{i})}
+\end{equation}
+
+The subscript $ i $ is the index for the iteration, hence every iteration the estimate of $ S^{t+1} $ is updated. For the first iteration, this requires an initial estimate of $ S^{t+1} $, in this study given applying an explicit euler scheme to solve equation \eqref{percolation} (no derivation given here). The derivative of $ g(S_i^{t+1}) $ depends on the system state, as $f(S,t)$ is not a continuous function:
+
+\begin{equation}
+g^{\prime} (S^{t+1}_{i}) = \frac{dg_{i}^{t+1}}{dS^{t+1}}
+\end{equation}
+
+\begin{equation}
+g^{\prime} (S^{t+1}_{i}) =
+\begin{cases}
+
+1 - \Delta{t} \left\lgroup {  - K_{sat} \beta (\frac{S_i}{S_{cap}}) ^ {\beta-1}  } \right\rgroup 		& \text{if } S^{t+1}_{i}) >= 0.5 S_{cap} \\
+
+1 - \Delta{t} \left\lgroup {  - K_{sat} \beta (\frac{S_i}{S_{cap}}) ^ {\beta-1}  - E_p  \frac{1}{0.5 S_{cap}} } \right\rgroup       & \text{if } S^{t+1}_{i}) < 0.5 S_{cap}
+\end{cases}
+\end{equation}
+
+The superscript $ t+1 $ has been omitted from E and $ S_i $ for reasons of readability. Equation \eqref{newtonraphson} is generally solved within 3-5 iterations, depending on the error $\varepsilon $ that is allowed. However, in some cases the NR method does not find the solution and provides an error in the model. One of these errors is called the zero-division error and results from a value of the derivative that is (very close to) zero. Therefore, if this situation occurs, equation \eqref{g_function} is solved using the computationally more expensive bisection method for that specific time step.
+
+The derivative $g^{\prime}$ for the piston flow model \eqref{pistonflow} is as follows:
+
+\begin{equation}
+g^{\prime} (S^{t+1}_{i}) =
+\begin{cases}
+
+1 - \Delta{t} \left\lgroup {  - (P-I) \beta (\frac{S_i}{S_{cap}}) ^ {\beta-1}  } \right\rgroup 		& \text{if } S^{t+1}_{i}) >= 0.5 S_{cap} \\
+
+1 - \Delta{t} \left\lgroup {  - (P-I) \beta (\frac{S_i}{S_{cap}}) ^ {\beta-1}  - E_p  \frac{1}{0.5 S_{cap}} } \right\rgroup       & \text{if } S^{t+1}_{i}) < 0.5 S_{cap}
+\end{cases}
+\end{equation}
+
+The recharge for percolation and the piston flow model is now calculated by numerical integration as:
+
+\begin{equation}
+R^{t+1} = K_{sat} \frac{\Delta t}{2}\left(\frac{S^t + S^{t+1}}{S_{cap}}\right)^\beta
+\end{equation}
+
+\begin{equation}
+R^{t+1} = (P^{t+1}-I) \frac{\Delta t}{2}\left(1-\left(\frac{S^t + S^{t+1}}{S_{cap}}\right)^\beta\right)
+\end{equation}

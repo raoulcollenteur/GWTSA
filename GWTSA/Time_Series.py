@@ -13,9 +13,9 @@ import TFN_Model
 import cma
 
 #%%
-class Model:
+class setup:
 
-    def __init__(self, bore, forcing, rows=[5, 8], timestart=2000):
+    def __init__(self, bore, forcing, rows=[5, 8], timestart=2000, cl_unit=10000.0, gw_unit=1.0):
         
         """
         Prepares the time series model with the forcings and observed heads
@@ -45,7 +45,7 @@ class Model:
         
         """
         
-        Ho = np.genfromtxt(('./%s.txt' % (bore)), delimiter=',', skiprows=rows[0], usecols=[0, 1], converters={0: md.strpdate2num('%Y%m%d')});
+        Ho = np.genfromtxt(('./%s' % (bore)), delimiter=',', skiprows=rows[0], usecols=[0, 1], converters={0: md.strpdate2num('%Y%m%d')});
         Ho = Ho[Ho[:,1] > -999] #Select only real values
         self._time_begin = Ho[0,0] #In time number, not date
         self._time_end = Ho[-1,0] #In time number, not date
@@ -54,14 +54,14 @@ class Model:
         self._time_observed = np.append(0, [np.cumsum(self._time_steps)]).astype(int) #Timesteps with observed heads
         self._time_model = np.arange(0,sum(self._time_steps,1), dtype=int)     
         self._time_start = timestart; #warmup time of the model [Days]
-        self.head_observed = Ho[:,1]
+        self.head_observed = Ho[:,1] / gw_unit
                
         # Import the precipitation and evaporation data and calculate the recharge
-        ClimateData = np.genfromtxt('./%s.txt' % forcing , delimiter=',', skiprows=rows[1], converters={1: md.datestr2num}, usecols=[1, 2, 3]);
+        ClimateData = np.genfromtxt('./%s' % forcing , delimiter=',', skiprows=rows[1], converters={1: md.datestr2num}, usecols=[1, 2, 3]);
         ClimateData = ClimateData[:,:][(ClimateData[:,0] >= self._time_begin) & (ClimateData[:,0] <= self._time_end)]
-        self.precipitation = ClimateData[:,1] / 10000.0 # divided by 10000 to make it in meters
+        self.precipitation = ClimateData[:,1] / cl_unit 
         self.precipitation[self.precipitation < 0.0] = 0.0
-        self.evaporation = ClimateData[:,2] / 10000.0 # divided by 10000 to make it in meters
+        self.evaporation = ClimateData[:,2] / cl_unit 
         self.evaporation[self.evaporation < 0.0] = 0.0
         self.bore = bore
         
@@ -70,7 +70,7 @@ class Model:
  
 #%% 
        
-    def solve(self, TFN, X0, method=0, correlation=1):
+    def solve(self, TFN, X0, method=0):
         
         """ 
         Solves the time series model
@@ -129,10 +129,8 @@ class Model:
             self.parameters_opt = res[0]
             self.res = res # NOT USED, BUT MIGHT INCLUDE THE PARAMETERS
             self.parameters = np.loadtxt('outcmaesxrecentbest.dat', skiprows=2)[:,5:]
-            #self.parameters = res[]
-
-        if correlation == 0 and method == 1:
             self.correlation_matrix = res[-2].correlation_matrix()
+        self.simulate(self._TFN, self.parameters_opt)    
         
     def monte_carlo(self, TFN, X0, n=1000):
         """
@@ -194,30 +192,30 @@ class Model:
 
 #%% swsi constitutes the adapted version of the Sum of weighted squared innovations (swsi) developed by asmuth et al. (2005). For large values of alpha and small timesteps the numerator approaches zero. Therefore, Peterson et al. (2014) adapted the swsi function, making the numerator a natural log and changing the product operator to a summation.
    
-    def swsi(self, parameters, InputData, solver=1):
-        TFN = InputData[0]
-        spinup = np.where(InputData[5]  > InputData[7])[0][0] # Where 
-        innovation = TFN(parameters, InputData, solver=solver)[1][spinup:-1:2]
-        N = len(innovation)
-        alpha = 1.15**parameters[4]
-        dt = InputData[6][-N:]
-        x = np.exp(sum(np.log(1 - np.exp(-2.0  / alpha * dt)))*(1.0/N))
-        swsi = sum( (x / (1 - np.exp(-2.0 / alpha * dt ))) * innovation**2)
-        return swsi
-#        
 #    def swsi(self, parameters, InputData, solver=1):
 #        TFN = InputData[0]
 #        spinup = np.where(InputData[5]  > InputData[7])[0][0] # Where 
-#        self.head_modeled, innovation = TFN(parameters, InputData, solver=solver)[0:2]
-#        innovation = innovation[spinup:-1:3]
-#        i = self._time_observed > self._time_start
-#        self.rmse = np.sqrt(sum((self.head_modeled[self._time_observed[i]]-self.head_observed[i])**2) / len(self.head_observed[i]))
+#        innovation = TFN(parameters, InputData, solver=solver)[1][spinup:-1:3]
 #        N = len(innovation)
-#        alpha = 1.2**parameters[4]
+#        alpha = 10**parameters[4]
 #        dt = InputData[6][-N:]
 #        x = np.exp(sum(np.log(1 - np.exp(-2.0  / alpha * dt)))*(1.0/N))
-#        swsi = sum( (x / (1 - np.exp(-2.0 / alpha * dt ))) * innovation**2) + self.rmse
+#        swsi = sum( (x / (1 - np.exp(-2.0 / alpha * dt ))) * innovation**2)
 #        return swsi
+        
+    def swsi(self, parameters, InputData, solver=1):
+        TFN = InputData[0]
+        spinup = np.where(InputData[5]  > InputData[7])[0][0] # Where 
+        self.head_modeled, innovation = TFN(parameters, InputData, solver=solver)[0:2]
+        innovation = innovation[spinup:-1:2]
+        i = self._time_observed > self._time_start
+        self.rmse = np.sqrt(sum((self.head_modeled[self._time_observed[i]]-self.head_observed[i])**2) / len(self.head_observed[i]))
+        N = len(innovation)
+        alpha = 1.2**parameters[4]
+        dt = InputData[6][-N:]
+        x = np.exp(sum(np.log(1 - np.exp(-2.0  / alpha * dt)))*(1.0/N))
+        swsi = sum( (x / (1 - np.exp(-2.0 / alpha * dt ))) * innovation**2) + self.rmse
+        return swsi
               
 #%% In this section the functions are defined that relate to the plotting of different forcings and results. Each function starts with plot_function to be able to quickly find these modules.        
 
@@ -235,9 +233,9 @@ class Model:
         plt.ylabel('Groundwater Head [L]', size=20)
         plt.title('%s' % (self.bore))
         
-    def plot_results(self):
+    def plot_results(self, ylim=[]):
         
-        plt.figure(figsize=(15,9))
+        plt.figure('Results %s' %self._TFN, figsize=(15,9))
         plt.suptitle('GWTSA %s Model Results' %self._TFN, fontsize=16, fontweight='bold')
         gs = plt.GridSpec(3, 4, wspace=0.2)
 
@@ -259,6 +257,8 @@ class Model:
         plt.ylabel('Groundwater head [m]')
         plt.axvline(md.num2date(self._time_begin + self._time_start), c='grey', linestyle='--', label='Spinup period')
         plt.text(md.num2date(self._time_begin + self._time_start), 0.0, 'Spinup period2')  # Not working yet?!
+        if ylim == '':
+            plt.ylim(ylim[0],ylim[1])
               
         # Plot the residuals and innovations  
         ax3 = plt.subplot(gs[2,:-1])      
@@ -266,7 +266,7 @@ class Model:
         plt.plot(md.num2date(self._time_axis[0:-1]), self.innovations, 'orange')
         plt.legend(['residuals','innovations'], loc=0)
         plt.ylabel('Error [m]')
-        plt.xlabel('Time')                         
+        plt.xlabel('Time [Years]')                         
         
         # Plot the Impulse Response Function
         ax4 = plt.subplot(gs[0,-1])    
@@ -296,7 +296,7 @@ class Model:
         plt.text(0.05, 0.20, 'Average deviation: %.2f meter' %self.avg_dev, fontsize=12)  
 
     def plot_diagnostics(self):
-        plt.figure(figsize=(15,9))
+        plt.figure('Diagnostics %s' %self._TFN, figsize=(15,9))
         gs = plt.GridSpec(4,4, wspace=0.4, hspace=0.4)
         plt.suptitle('GWTSA Parameter diagnostics', fontsize=16, fontweight='bold')
         

@@ -7,23 +7,21 @@ this is a time series analysis model
 
 #Import all the packages needed
 #from datetime import datetime
-import matplotlib.pyplot as plt
 from GWTSA import *
 
 # close the previous figures
 #plt.close('all')
 
-bore = 'Test_Data/B39E0117-001' #, 'B27B0238-002', 'B27B0081-001', 'B27C0002-001', 'B32F0002-001', 'B33A0113-001', 'B33C0140-001', 'B39E0117-001', 'B40B0304-001'
-forcing = 'Test_Data/KNMI_Bilt'
+bore = 'Test_Data/B27B0081-001.txt' # 'B27B0238-002', 'B27B0081-001', 'B27C0002-001', 'B32F0002-001', 'B33A0113-001', 'B33C0140-001', 'B39E0117-001', 'B40B0304-001'
+forcing = 'Test_Data/KNMI_Bilt.txt'
 TFN = 'TFN4'
  
-ts = Model(bore, forcing, rows=[5,8], timestart=2000)
+ts = setup(bore, forcing, rows=[5,8], timestart=2000)
 
-X0 = {'A': 3.0,'a': 2.2, 'n': 2.5,'Alpha': 10.0, 'S_cap': -1.00, 'K_sat':-2.0, 'Beta': 3, 'D': -3, 'f': -0.1} # initial parameters
+X0 = {'A': 2.5,'a': 2.0, 'n': 1.6,'Alpha': 2.0, 'S_cap': -2, 'K_sat':-3.0, 'Beta': 3, 'D': -3, 'f': -0.1} # initial parameters
 
-ts.solve(TFN, X0, method=0, correlation=0)
+ts.solve(TFN, X0, method=1)
 
-ts.simulate(TFN, ts.parameters_opt)
 
 ''' Optimal parameter set
 # (A, a, n, d, Alpha, S_cap, K_sat, Beta, D)

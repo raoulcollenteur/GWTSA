@@ -1,15 +1,30 @@
 \chapter{Installation}
 
-\subsection{Where to get GWTSA?}
+\section{Where to get GWTSA?}
+Reading this file, it is likely that you have already found the GWTSA repository on Github. However, for completeness, the GWTSA software, tutorials and documentations can be viewed and downloaded from \url{https://github.com/raoulcollenteur/GWTSA}. You can make a branch of GWTSA and collaborate on the software development or simply download, install and use it. \textbf{EDIT:} I am working on a pip python distribution but this has not yet been implemented.
 
+\section{Python}
+Since GWTSA is primarily written in Python, it is necessary to install a Python distribution as well. Python is open source and different GUI's are available open source as well. Have a look at for example the Enthought (\url{https://www.enthought.com}) or the Anaconda distributions (\url{http://continuum.io/downloads}). Make sure to download the python 2.7 versions, as GWTSA has not yet been tested on python 3.0. These distributions will provide you with an editor as well as Jupiter Notebook to display and work in Ipython notebooks that are provided with GWTSA.
 
-\subsection{Installing on a Mac}
+If you are not familiar with Python, it is probably a good idea to explore this programming language a little before you embark on your time series analysis modelling adventure. There are numerous great tutorials that can get you going on in Python, I will just list a few of my favourites here. A great collection of some Ipython notebooks with tutorials can be found at Wakari (\url{https://wakari.io/gallery}). The introductory course 'Exploratory computing with Python' (\url{http://mbakker7.github.io/exploratory_computing_with_python/}) given at the TU Delft provides an very accessible start for the engineers among us. On \url{http://edx.org} you will find the MIT course 'Introduction to computer science and programming using Python', a more elaborate (and time consuming) course that will give you a very firm basis in python and programming in general.   
 
-\subsection{Installing on Windows (Experimental)}
+\section{Installing on a Mac}
+Installation of GWTSA is tried to be as straight forward as possible. For direct use, you can put it in any folder, and import it in your python project using the usual python import statements. However, GWTSA is then only available if the folder containing the software is in the same folder as your project is. To make GWTSA available for import in all of your python environments (Notebook, Spyder, Command Window) and independent of where your project is stored, the following procedure is proposed:
 
-\subsection{Installing on other Operating Systems}
+\begin{itemize}
+\item{Open Terminal}
+\item{Type $touch \sim/.bash\_profile; open \sim/.bash\_profile$}
+\item{Add 'export PYTHONPATH=\textdollar PYTHONPATH:/your/Folder/With/GWTSA' }		
+\item{Type $source \sim/.bash\_profile$ to directly execute your new bash\_profile}
+\end{itemize}
 
-\subsection{Compiling the Unsaturated Zone Module using Cython}
+\section{Installing on Windows (Experimental)}
+This has yet to be investigated, probably it works already when you place the GWTSA folder within your project folder and use the usual python import statements.
+
+\section{Installing on other Operating Systems}
+This has yet to be investigated, probably it works already when you place the GWTSA folder within your project folder and use the usual python import statements.
+
+\section{Compiling the Unsaturated Zone Module using Cython}
 The GWTSA software is unique in the point that it offers the ability to use a non-linear model to calculate the recharge. However, this comes at a price, most notably in terms of model complexity and computation times. The unsaturated zone model (captured in the python and cython files unsat\_zone.py/unsat\_zone.pyx) can increase the computation times dramatically and is therefore ported to a compiled language for increased performance in terms of computation speed. There is an interesting python package that can help in porting python code to compiled C-code: Cython (\url{http://cython.org}).
 
 Cython can port pure python scripts to compiled C-code, but the speed-up will generally be limited to a few orders of magnitude (1-3 times as fast). A few modifications to your python script however, can eliminate bottlenecks and really boost the performance of your code. This cython-enhanced version of our python script is unsat\_zone.pyx, and is ready to be 'cythonized'. Cythonizing is the process of compiling your cython script to C-code and something that can than be imported back into your python scripts. On a mac, this means you create a Shared Object file, (unsat\_zone.so), and on windows you will create another file type (unsat\_zone.pyd). This means that the file extension is dependent on your operating systems and compiling the file needs to happen on the same operating system that GWTSA is used on. Compiling is straight forward and can be done following the following steps.

@@ -51,12 +51,12 @@ TFN2 defines a TFN model that deals with the recharge a little more, adding a pa
 def TFN2(parameters,InputData, solver=0):
     
     #Unpack all the parameters that should be calibrated
-    A = 10**parameters[0]
-    a = 10**parameters[1]
+    A = 10.0**parameters[0]
+    a = 10.0**parameters[1]
     n = parameters[2]
     d = parameters[3]
-    alpha = 10**parameters[4]
-    f = 10**parameters[5]
+    alpha = 10.0**parameters[4]
+    f = 10.0**parameters[5]
     
     #unpack all the data that is needed for the simulation
     time_model = InputData[1]
@@ -125,15 +125,15 @@ def TFN3(parameters,InputData):
     
 def TFN4(parameters,InputData, solver=1):
     # Unpack all the parameters that should be calibrated
-    A = 10**parameters[0]
-    a = 10**parameters[1]
+    A = 10.0**parameters[0]
+    a = 10.0**parameters[1]
     n = parameters[2]
     d = parameters[3]
-    alpha = 1.15**parameters[4]
-    S_cap = 10**parameters[5]
-    K_sat = 10**parameters[6]
+    alpha = 10.0**parameters[4]
+    S_cap = 10.0**parameters[5]
+    K_sat = 10.0**parameters[6]
     Beta = parameters [7]
-    Imax = 10**-3.0 #parameters[8]
+    Imax = 10.0**-3.0 #parameters[8]
 
     # unpack all the data that is needed for the simulation
     time_model = InputData[1]
