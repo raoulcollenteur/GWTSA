@@ -7,7 +7,7 @@ Created on Mon Mar 16 10:08:36 2015
 import numpy as np
 import matplotlib.dates as md
 import matplotlib.pyplot as plt
-from scipy.optimize import fmin
+from scipy.optimize import fmin, leastsq
 from scipy.special import gammainc
 import TFN_Model
 import cma
@@ -130,6 +130,8 @@ class setup:
             self.res = res # NOT USED, BUT MIGHT INCLUDE THE PARAMETERS
             self.parameters = np.loadtxt('outcmaesxrecentbest.dat', skiprows=2)[:,5:]
             self.correlation_matrix = res[-2].correlation_matrix()
+        elif method == 2:
+            self.parameters_opt, self.correlation_matrix = leastsq(self.swsi, initial_parameters, args=(InputData,))
         self.simulate(self._TFN, self.parameters_opt)    
         
     def monte_carlo(self, TFN, X0, n=1000):
@@ -183,7 +185,7 @@ class setup:
         i = self._time_observed > self._time_start
         self.explained_variance = (np.var(self.head_observed[i])**2 - np.var(self.head_modeled[self._time_observed[i]]-self.head_observed[i])**2)/np.var(self.head_observed[i])**2*100
         
-        self.swsi_value = self.swsi(self.parameters_opt, InputData)
+        self.swsi_value = self.swsi(parameters, InputData)
         
         self.rmse = np.sqrt(sum((self.head_modeled[self._time_observed[i]]-self.head_observed[i])**2) / len(self.head_observed[i]))
         self.avg_dev = sum(self.head_modeled[self._time_observed[i]]-self.head_observed[i]) / len(self.head_observed[i])
@@ -192,30 +194,43 @@ class setup:
 
 #%% swsi constitutes the adapted version of the Sum of weighted squared innovations (swsi) developed by asmuth et al. (2005). For large values of alpha and small timesteps the numerator approaches zero. Therefore, Peterson et al. (2014) adapted the swsi function, making the numerator a natural log and changing the product operator to a summation.
    
-#    def swsi(self, parameters, InputData, solver=1):
-#        TFN = InputData[0]
-#        spinup = np.where(InputData[5]  > InputData[7])[0][0] # Where 
-#        innovation = TFN(parameters, InputData, solver=solver)[1][spinup:-1:3]
-#        N = len(innovation)
-#        alpha = 10**parameters[4]
-#        dt = InputData[6][-N:]
-#        x = np.exp(sum(np.log(1 - np.exp(-2.0  / alpha * dt)))*(1.0/N))
-#        swsi = sum( (x / (1 - np.exp(-2.0 / alpha * dt ))) * innovation**2)
-#        return swsi
-        
     def swsi(self, parameters, InputData, solver=1):
         TFN = InputData[0]
         spinup = np.where(InputData[5]  > InputData[7])[0][0] # Where 
-        self.head_modeled, innovation = TFN(parameters, InputData, solver=solver)[0:2]
-        innovation = innovation[spinup:-1:2]
-        i = self._time_observed > self._time_start
-        self.rmse = np.sqrt(sum((self.head_modeled[self._time_observed[i]]-self.head_observed[i])**2) / len(self.head_observed[i]))
+        innovation = TFN(parameters, InputData, solver=solver)[1][spinup:-1:1]
         N = len(innovation)
-        alpha = 1.2**parameters[4]
+        alpha = 10.0**parameters[4]
         dt = InputData[6][-N:]
-        x = np.exp(sum(np.log(1 - np.exp(-2.0  / alpha * dt)))*(1.0/N))
-        swsi = sum( (x / (1 - np.exp(-2.0 / alpha * dt ))) * innovation**2) + self.rmse
+        x = np.exp(sum(np.log(1 - np.exp(-2.0 / alpha * dt)))*(1.0/N))
+        swsi = np.sqrt(sum( (x / (1 - np.exp(-2.0 / alpha * dt ))) * innovation**2))
         return swsi
+        
+#    def swsi(self, parameters, InputData, solver=1):
+#        TFN = InputData[0]
+#        spinup = np.where(InputData[5]  > InputData[7])[0][0] # Where 
+#        self.head_modeled, innovation = TFN(parameters, InputData, solver=solver)[0:2]
+#        innovation = innovation[spinup:-1:2]
+#        i = self._time_observed > self._time_start
+#        self.rmse = np.sqrt(sum((self.head_modeled[self._time_observed[i]]-self.head_observed[i])**2) / len(self.head_observed[i]))
+#        N = len(innovation)
+#        alpha = 1.2**parameters[4]
+#        dt = InputData[6][-N:]
+#        x = np.exp(sum(np.log(1 - np.exp(-2.0  / alpha * dt)))*(1.0/N))
+#        swsi = sum( (x / (1 - np.exp(-2.0 / alpha * dt ))) * innovation**2) + self.rmse
+#        return swsi
+        
+#    def swsi(self, parameters, InputData, solver=1): #RMSE Objective Function
+#        TFN = InputData[0]
+#        spinup = np.where(InputData[5]  > InputData[7])[0][0] # Where 
+#        self.head_modeled= TFN(parameters, InputData, solver=solver)[0]
+#        i = self._time_observed > self._time_start
+#        swsi = np.sqrt(sum((self.head_modeled[self._time_observed[i]]-self.head_observed[i])**2) / len(self.head_observed[i]))
+#        return swsi    
+        
+    def mininnovations(self, parameters, InputData, solver=1):
+        TFN = InputData[0]
+        innovations = TFN(parameters, InputData, solver=solver)[1]
+        return innovations        
               
 #%% In this section the functions are defined that relate to the plotting of different forcings and results. Each function starts with plot_function to be able to quickly find these modules.        
 

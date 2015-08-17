@@ -12,15 +12,15 @@ from GWTSA import *
 # close the previous figures
 #plt.close('all')
 
-bore = 'Test_Data/B27B0081-001.txt' # 'B27B0238-002', 'B27B0081-001', 'B27C0002-001', 'B32F0002-001', 'B33A0113-001', 'B33C0140-001', 'B39E0117-001', 'B40B0304-001'
+bore = 'Test_Data/B33A0113-001.txt' # 'B27B0238-002', 'B27B0081-001', 'B27C0002-001', 'B32F0002-001', 'B33A0113-001', 'B33C0140-001', 'B39E0117-001', 'B40B0304-001'
 forcing = 'Test_Data/KNMI_Bilt.txt'
 TFN = 'TFN4'
  
 ts = setup(bore, forcing, rows=[5,8], timestart=2000)
 
-X0 = {'A': 2.5,'a': 2.0, 'n': 1.6,'Alpha': 2.0, 'S_cap': -2, 'K_sat':-3.0, 'Beta': 3, 'D': -3, 'f': -0.1} # initial parameters
+X0 = {'A': 3.0,'a': 2.0, 'n': 1.6,'Alpha': 1.0, 'S_cap': -2.0, 'K_sat':-3.0, 'Beta': 2, 'D': -3, 'f': -0.1} # initial parameters
 
-ts.solve(TFN, X0, method=1)
+ts.solve(TFN, X0, method=0)
 
 
 ''' Optimal parameter set
@@ -43,3 +43,13 @@ Parameters = [2.6, 10.0, 1.35, 17.0, 1.0, 0.0, -3.0, 2.0, -3.0]'''
 
 ts.plot_results()
 ts.plot_diagnostics()
+
+#Check normal distribution of innovations
+#plt.figure()
+#plt.hist(ts.innovations, 50)
+
+#
+#
+#Parameters = [3.0, 2.0, 1.6, 25.0, 2.0, 0.0, -3.0, 2.0, -3.0]
+#ts.simulate(TFN,Parameters)
+#ts.plot_results()
