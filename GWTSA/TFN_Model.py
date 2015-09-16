@@ -55,7 +55,7 @@ def TFN2(parameters,InputData, solver=0):
     a = 10.0**parameters[1]
     n = parameters[2]
     d = parameters[3]
-    alpha = 10.0**parameters[4]
+    alpha = parameters[4]
     f = 10.0**parameters[5]
     
     #unpack all the data that is needed for the simulation
@@ -129,7 +129,7 @@ def TFN4(parameters,InputData, solver=1):
     a = 10.0**parameters[1]
     n = parameters[2]
     d = parameters[3]
-    alpha = 10.0**parameters[4]
+    alpha = parameters[4]
     S_cap = 10.0**parameters[5]
     K_sat = 10.0**parameters[6]
     Beta = parameters [7]

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Created on Thu Aug 27 10:45:17 2015
+Created on Mon Mar 16 10:08:36 2015
 
 @author: Raoul
 """
@@ -12,46 +12,9 @@ from scipy.special import gammainc
 import TFN_Model
 import cma
 
-#%% Model Class
+#%%
+class setup:
 
-class Model:
-    def __init__(self, bores, forcing):
-        self.bores_list = []            # Create an empty list for all the bores instances
-        self.bores_number = len(bores)  # Determine how many boreholes are entered
-        
-        for i in range(self.bores_number):
-            self.bores_list.append(TimeSeries(bores[i], forcing[i]))
-            
-    def add_bore(self, bores, forcing):
-        self.bores_list.append(TimeSeries(bores[i], forcing[i]))
-        self.bores_number += 1          # Increase number of boreholes
-        
-    def delete_bore(self, boreid):      #Not functional yet!!!
-        self.bores_list.remove(boreid)
-        self.bores_number -= 1
-    
-    def solve(self, TFN, X0, method=0):       
-        for i in range(self.bores_number):
-            self.bores_list[i].solve(TFN[i], X0, method)
-    
-    def plot(self):
-        plt.figure(figsize=(15,9))
-        colors = ['b', 'g', 'r', 'c', 'm','y', 'k','w']   
-        for i in range(self.bores_number):
-            plt.plot(md.num2date(self.bores_list[i]._time_axis), self.bores_list[i].head_observed, '%s,' %colors[i], label='%s observed' %self.bores_list[i].bore)
-            plt.plot(md.num2date(np.arange(self.bores_list[i]._time_begin, self.bores_list[i]._time_end+1)), 
-                     self.bores_list[i].head_modeled[self.bores_list[i]._time_model], '%s-' %colors[i], label='%s model' %self.bores_list[i].bore)     
-            plt.legend(['Observed Head','Modeled Head'], loc=0)
-            plt.ylabel('Groundwater head [m]')
-            plt.axvline(md.num2date(self.bores_list[i]._time_begin + self.bores_list[i]._time_start), 
-                        c='grey', linestyle='--', label='Spinup period')
-            plt.text(md.num2date(self.bores_list[i]._time_begin + self.bores_list[i]._time_start), 0.0, 
-                     'Spinup period2')  # Not working yet?!
-        plt.legend(loc='upper left', bbox_to_anchor=(1, 0.5))        
-    
-#%% Time series class    
-            
-class TimeSeries:
     def __init__(self, bore, forcing, rows=[5, 8], timestart=2000, cl_unit=10000.0, gw_unit=1.0):
         
         """
@@ -101,12 +64,13 @@ class TimeSeries:
         self.evaporation = ClimateData[:,2] / cl_unit 
         self.evaporation[self.evaporation < 0.0] = 0.0
         self.bore = bore
-        print 'Model setup for bore id %s completed succesfully.' %self.bore
-
+        
     def __repr__(self):
         return 'Time Series Data of Bore: %s' %self.bore
-        
-    def solve(self, TFN, X0, method):
+ 
+#%% 
+       
+    def solve(self, TFN, X0, method=0):
         
         """ 
         Solves the time series model
@@ -167,9 +131,9 @@ class TimeSeries:
             self.parameters = np.loadtxt('outcmaesxrecentbest.dat', skiprows=2)[:,5:]
             self.correlation_matrix = res[-2].correlation_matrix()
         elif method == 2:
-            self.parameters_opt, self.correlation_matrix = leastsq(self.mininnovations, initial_parameters, args=(InputData,))
+            self.parameters_opt, self.correlation_matrix = leastsq(self.swsi, initial_parameters, args=(InputData,))
         self.simulate(self._TFN, self.parameters_opt)    
-
+        
     def monte_carlo(self, TFN, X0, n=1000):
         """
         Runs a monte carlo analysis
@@ -233,9 +197,9 @@ class TimeSeries:
     def swsi(self, parameters, InputData, solver=1):
         TFN = InputData[0]
         spinup = np.where(InputData[5]  > InputData[7])[0][0] # Where 
-        innovation = TFN(parameters, InputData, solver=solver)[1][spinup:-1:2]
+        innovation = TFN(parameters, InputData, solver=solver)[1][spinup:-1:1]
         N = len(innovation)
-        alpha = parameters[4]
+        alpha = 10.0**parameters[4]
         dt = InputData[6][-N:]
         x = np.exp(sum(np.log(1 - np.exp(-2.0 / alpha * dt)))*(1.0/N))
         swsi = np.sqrt(sum( (x / (1 - np.exp(-2.0 / alpha * dt ))) * innovation**2))
@@ -255,14 +219,14 @@ class TimeSeries:
 #        swsi = sum( (x / (1 - np.exp(-2.0 / alpha * dt ))) * innovation**2) + self.rmse
 #        return swsi
         
-    def rmse(self, parameters, InputData, solver=1): #RMSE Objective Function
-        TFN = InputData[0]
-        spinup = np.where(InputData[5]  > InputData[7])[0][0] # Where 
-        self.head_modeled= TFN(parameters, InputData, solver=solver)[0]
-        i = self._time_observed > self._time_start
-        rmse = np.sqrt(sum((self.head_modeled[self._time_observed[i]]-self.head_observed[i])**2) / len(self.head_observed[i]))
-        return rmse   
-#       
+#    def swsi(self, parameters, InputData, solver=1): #RMSE Objective Function
+#        TFN = InputData[0]
+#        spinup = np.where(InputData[5]  > InputData[7])[0][0] # Where 
+#        self.head_modeled= TFN(parameters, InputData, solver=solver)[0]
+#        i = self._time_observed > self._time_start
+#        swsi = np.sqrt(sum((self.head_modeled[self._time_observed[i]]-self.head_observed[i])**2) / len(self.head_observed[i]))
+#        return swsi    
+        
     def mininnovations(self, parameters, InputData, solver=1):
         TFN = InputData[0]
         innovations = TFN(parameters, InputData, solver=solver)[1]
@@ -402,8 +366,3 @@ class TimeSeries:
         Fs = self.parameters_opt[0] * gammainc(self.parameters_opt[2], self._time_model/self.parameters_opt[1])
         Fb = Fs[1:] - Fs[0:-1]
         plt.plot(self._time_model[0:-1],Fb)
-        
-#%%
-
-
-
