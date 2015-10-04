@@ -10,7 +10,6 @@
 # EV24     = Referentiegewasverdamping (Makkink) (in 0.1 mm); 
 # 
 # STN,YYYYMMDD,   RH, EV24
-# 
   260,19500101,    0,     
   260,19500102,   85,     
   260,19500103,    2,     
