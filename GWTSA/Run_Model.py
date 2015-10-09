@@ -8,24 +8,27 @@ this is a time series analysis model
 #Import all the packages needed
 from GWTSA import *
 
-import glob
-bores = glob.glob('Test_Data/Selectie/*.csv')
+#import glob
+#bores = glob.glob('Test_Data/Selectie/*.csv')
 
 plt.close('all')
 
-#bores = ['Test_Data/B33A0229001_1.csv']
-#bores = ['Test_Data/B27B0081001_1.csv', 'Test_Data/B27B0081001_1.csv']#['Test_Data/B33A0229001_1.csv', 'Test_Data/B33C0141001_0.csv', 'Test_Data/B33A0114002_1.csv','Test_Data/B33A0227001_1.csv', 'Test_Data/B33A0229001_1.csv']
+bores = ['Test_Data/B27C0041001_1.csv','Test_Data/B27C0041001_1.csv']
+#bores = ['Test_Data/Selectie/B27C0002001_1.csv', 'Test_Data/Selectie/B27C0041001_1.csv', 'Test_Data/Selectie/B27C0049001_1.csv', 'Test_Data/Selectie/B27D0001001_1.csv', 'Test_Data/Selectie/B33A0113001_1.csv', 'Test_Data/Selectie/B33C0135001_1.csv', 'Test_Data/Selectie/B33D0115001_1.csv', 'Test_Data/Selectie/B33D0217001_1.csv', 'Test_Data/Selectie/B40B0304001_1.csv'
 
 forcing = 'Test_Data/KNMI_Bilt.txt'
        
 ml = Model(bores,forcing)
 
-TFN = ['TFN4','TFN4','TFN2','TFN2','TFN2','TFN2','TFN2','TFN2','TFN2','TFN2','TFN2','TFN2','TFN2','TFN2','TFN2','TFN2']
-X0 = {'A': 3.2,'a': 2.5, 'n': 1.6,'Alpha': 0, 'S_cap': -2.0, 'K_sat':-3.0, 'Beta': 3.0, 'D': -3, 'f': -0.1} # initial parameters
+TFN = ['TFN4','TFN2','TFN2','TFN2','TFN2','TFN2','TFN2','TFN2','TFN2','TFN2','TFN2','TFN2','TFN2','TFN2','TFN2','TFN2']
+X0 = {'A': 3.2,'a': 2.5, 'n': 1.6,'Alpha': 15, 'S_cap': -1.0, 'K_sat':-2.0, 'Beta': 2.0, 'D': -3, 'f': -0.1} # initial parameters
 
 ml.solve(TFN, X0, 2)
 
-ml.plot()
+ml.plot(1)
+
+ml.bores_list[0].plot_results()
+ml.bores_list[1].plot_results()
 
 #X0 = ml.bores_list[0].parameters_opt
 #ml.solve(TFN, X0, 2)

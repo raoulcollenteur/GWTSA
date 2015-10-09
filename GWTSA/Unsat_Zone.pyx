@@ -50,7 +50,7 @@ def percolation(np.ndarray[np.int_t] Time_Model, np.ndarray[np.float_t, ndim=1] 
     
     # Create an empty array to store the soil state in
     cdef np.ndarray[np.float_t] S = np.zeros(n)
-    S[0] = 0.25 * S_cap   #Set the initial system state
+    S[0] = 0.75 * S_cap   #Set the initial system state
     cdef np.ndarray[np.float_t] Si = np.zeros(n)
     Si[0] = 0.0
     cdef np.ndarray[np.float_t] Pe = np.zeros(n)

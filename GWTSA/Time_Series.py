@@ -36,18 +36,18 @@ class Model:
             self.bores_list[i].solve(TFN[i], X0, method)
     
     def plot(self, modeled=1):
-        fig = plt.figure(figsize=(15,9))
-        colors = ['b', 'g', 'r', 'c', 'm','y', 'k','w', 'b', 'g', 'r', 'c', 'm','y', 'k','w', 'b', 'g', 'r', 'c', 'm','y', 'k','w']
-        ax = fig.add_subplot(111)
-        ax.set_position([0.05,0.05,0.7,0.8])
+        fig2 = plt.figure('Boreholes', figsize=(15,9))
+        colors=plt.cm.nipy_spectral(np.linspace(0,1,self.bores_number))
+        ax = fig2.add_subplot(111)
+        ax.set_position([0.05,0.1,0.8,0.8])
         for i in range(self.bores_number):
-            ax.plot(md.num2date(self.bores_list[i]._time_axis), self.bores_list[i].head_observed, '%s' %colors[i], label='%s observed' %self.bores_list[i].bore)
+            ax.plot(md.num2date(self.bores_list[i]._time_axis), self.bores_list[i].head_observed, c=colors[i], marker='o', label='%s' %self.bores_list[i].bore, lw=2)
             if modeled == 1:            
-                ax.plot(md.num2date(np.arange(self.bores_list[i]._time_begin, self.bores_list[i]._time_end+1)), self.bores_list[i].head_modeled[self.bores_list[i]._time_model], '%s-' %colors[i], label='%s model' %self.bores_list[i].bore)     
-            #plt.legend()
+                ax.plot(md.num2date(np.arange(self.bores_list[i]._time_begin, self.bores_list[i]._time_end+1)), self.bores_list[i].head_modeled[self.bores_list[i]._time_model], c=colors[i], label='%s model' %self.bores_list[i].bore)     
         plt.ylabel('Groundwater head [m]')
         plt.xlabel('Time [Years]')
-        ax.legend(loc='upper left', bbox_to_anchor=(1, 1.0))        
+        ax.legend(loc='upper left', bbox_to_anchor=(1, 1.014))
+        fig2.savefig('boreholes.eps', format='eps', bbox_inches='tight')       
     
 #%% Time series class    
             
@@ -102,7 +102,7 @@ class TimeSeries:
         self.precipitation[self.precipitation < 0.0] = 0.0
         self.evaporation = ClimateData[:,2] / cl_unit 
         self.evaporation[self.evaporation < 0.0] = 0.0
-        self.bore = bore
+        self.bore = bore[-17:-8]
         print 'Model setup for bore id %s completed succesfully.' %self.bore
 
     def __repr__(self):
@@ -229,7 +229,7 @@ class TimeSeries:
 #%% swsi constitutes the adapted version of the Sum of weighted squared innovations (swsi) developed by asmuth et al. (2005). For large values of alpha and small timesteps the numerator approaches zero. Therefore, Peterson et al. (2014) adapted the swsi function, making the numerator a natural log and changing the product operator to a summation.
    
     def swsi(self, parameters, InputData, solver=1):
-        alpha = 150.
+        alpha = 15.
         self.head_modeled, self.recharge = self.TFN(parameters, InputData, solver=solver)
         self.residuals = self.head_observed - self.head_modeled[self._time_observed]
         self.innovations = self.residuals[1:] - (self.residuals[0:-1] * np.exp(-self._time_steps/alpha))
@@ -237,8 +237,8 @@ class TimeSeries:
         N = len(innovations)                        # Number of innovations
         dt = self._time_steps[-N:]                  # 
         numerator = np.exp(sum(np.log(1 - np.exp(-2.0 / alpha * dt)))*(1.0/N))
-        self.swsi = np.sqrt(sum( (numerator / (1 - np.exp(-2.0 / alpha * dt ))) * innovations**2))
-        return self.swsi
+        self.swsi_value = np.sqrt(sum( (numerator / (1 - np.exp(-2.0 / alpha * dt ))) * innovations**2))
+        return self.swsi_value
 
     def rmse(self, parameters, InputData, solver=1): #RMSE Objective Function
         self.head_modeled= self.TFN(parameters, InputData, solver=solver)[0]
@@ -247,7 +247,7 @@ class TimeSeries:
         return rmse   
 #       
     def mininnovations(self, parameters, InputData, solver=1):
-        alpha = 150.
+        alpha = 15.
         self.head_modeled, self.recharge = self.TFN(parameters, InputData, solver=solver)
         self.residuals = self.head_observed - self.head_modeled[self._time_observed]
         self.innovations = self.residuals[1:] - (self.residuals[0:-1] * np.exp(-self._time_steps/alpha))
@@ -327,7 +327,7 @@ class TimeSeries:
         ax6 = plt.subplot(gs[2,-1])   
         ax6.xaxis.set_visible(False)
         ax6.yaxis.set_visible(False)        
-        plt.text(0.05, 0.80, 'SWSI: %.2f meter' %self.swsi, fontsize=12 )
+        plt.text(0.05, 0.80, 'SWSI: %.2f meter' %self.swsi_value, fontsize=12 )
         plt.text(0.05, 0.60, 'Explained variance: %.2f %s' %( self.explained_variance, '%'), fontsize=12 )
         plt.text(0.05, 0.40, 'RMSE: %.2f meter' %self.rmse, fontsize=12)        
         plt.text(0.05, 0.20, 'Average deviation: %.2f meter' %self.avg_dev, fontsize=12)  
