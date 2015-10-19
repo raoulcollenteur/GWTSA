@@ -15,14 +15,14 @@ from scipy.signal import fftconvolve
 TFN2 defines a TFN model that deals with the recharge a little more, adding a parameter 'f' that determines what part of the evaporation is extracted from the recharge. 
 '''
     
-def TFN2(parameters, InputData, solver=0):
+def linear(parameters, InputData, solver=0):
     
     #Unpack all the parameters that should be calibrated
-    A = 10.0**parameters[0]
-    a = 10.0**parameters[1]
-    n = parameters[2]
-    d = parameters[3]
-    f = 10.0**parameters[5]
+    A = 10.0** parameters['A'].value
+    a = 10.0** parameters['a'].value
+    n = parameters['n'].value
+    d = parameters['d'].value
+    f = 10.0** parameters['f'].value
     
     #unpack all the data that is needed for the simulation
     time_model = np.arange(0,10000)
@@ -42,16 +42,16 @@ def TFN2(parameters, InputData, solver=0):
 ''' TFN4 has the non-linear unsaturated zone model to calculate the recharge  
 '''    
     
-def TFN4(parameters,InputData, solver):
-    # Unpack all the parameters that should be calibrated
-    A = 10.0**parameters[0]
-    a = 10.0**parameters[1]
-    n = parameters[2]
-    d = parameters[3]
-    S_cap = 10.0**parameters[5]
-    K_sat = 10.0**parameters[6]
-    Beta = parameters [7]
-    Imax = 10.0**-3.0 #parameters[8]
+def nonlinear(parameters,InputData, solver):
+    # Unpack all the parameters that should be calibrated    
+    A = 10.0**parameters['A'].value
+    a = 10.0**parameters['a'].value
+    n = parameters['n'].value
+    d = parameters['d'].value
+    S_cap = 10.0**parameters['scap'].value
+    K_sat = 10.0**parameters['ksat'].value
+    Beta = parameters['beta'].value       
+    Imax = 10.0** parameters['imax'].value
 
     # unpack all the data that is needed for the simulation
     time_model = InputData[0]
@@ -108,37 +108,3 @@ def TFN3(parameters,InputData):
     v = v[istart:len(v):1] #give back the innovations for every xth time step
     return [Hm, v]    
     
-'''
-TFN1 defines what is in this research the most simple transfer function noise (TFN) model. The model is linear and the recharge is calculated by extracting the evaporation from the precipitation
-'''
-
-def TFN1(parameters,InputData, solver = 0):
-    
-    #Unpack all the parameters that should be calibrated
-    A = parameters[0]
-    a = parameters[1]
-    n = parameters[2]
-    d = parameters[3]
-    alpha = parameters[4]
-    
-    #unpack all the data that is needed for the simulation
-    t = InputData[1]
-    P = InputData[2]
-    E = InputData[3]
-    Ho = InputData[4]
-    to = InputData[5] 
-    dt = InputData[6]
-    tstart = InputData[7]
-    istart = np.where(to > tstart)[0][0]
-    
-    #Recharge model
-    R = P - E  
-    
-    # Set the value for the timestep to calculate the innovations
-    Fs = A * gammainc(n,t/a) # Step response function based on pearsonIII
-    Fb = Fs[1:] - Fs[0:-1] #block reponse function
-    Hm = d + np.convolve(R,Fb)
-    r = Ho - Hm[to] #Calculate the residuals at the timesteps with an observation
-    v = r[1:] - ( r[0:-1] * np.exp(-dt/alpha) )
-    v = v[istart:len(v):3] #give back the innovations for every xth time step
-    return [Hm, v]

@@ -12,8 +12,28 @@ from scipy.special import gammainc
 import TFN_Model
 import cma
 from statsmodels.tsa.stattools import acf
+from lmfit import minimize, Parameters, Parameter, report_fit
 
 #%% Model Class
+def latex_plot():
+    #from matplotlib import rcParams
+    params = {'backend': 'ps',
+              #'text.latex.preamble': ['\usepackage{amsmath}','\usepackage[utf8]{inputenc}'],
+              #'text.latex.unicode': True,
+              'axes.labelsize': 10, 
+              'axes.titlesize': 10,
+              'font.size': 10, 
+              'font.family': 'serif',
+              #'font.serif': 'Bookman',
+              'legend.fontsize': 10,
+              'xtick.labelsize': 8,
+              'ytick.labelsize': 8,
+              #'text.usetex': 0,
+              #'text.dvipnghack' : True,
+              'figure.figsize': [8.29,5],
+              'figure.dpi': 300
+    }
+    return plt.rcParams.update(params)
 
 class Model:
     def __init__(self, bores, forcing, timestart=2000):
@@ -24,7 +44,7 @@ class Model:
             self.bores_list.append(TimeSeries(bores[i], forcing, timestart=timestart))
             
     def add_bore(self, bores, forcing):
-        self.bores_list.append(TimeSeries(bores[i], forcing[i]))
+        self.bores_list.append(TimeSeries(bores, forcing))
         self.bores_number += 1          # Increase number of boreholes
         
     def delete_bore(self, boreid):      #Not functional yet!!!
@@ -41,9 +61,9 @@ class Model:
         ax = fig2.add_subplot(111)
         ax.set_position([0.05,0.1,0.8,0.8])
         for i in range(self.bores_number):
-            ax.plot(md.num2date(self.bores_list[i]._time_axis), self.bores_list[i].head_observed, c=colors[i], marker='o', label='%s' %self.bores_list[i].bore, lw=2)
+            ax.plot(md.num2date(self.bores_list[i]._time_axis), self.bores_list[i].head_observed,'.', c=colors[i])
             if modeled == 1:            
-                ax.plot(md.num2date(np.arange(self.bores_list[i]._time_begin, self.bores_list[i]._time_end+1)), self.bores_list[i].head_modeled[self.bores_list[i]._time_model], c=colors[i], label='%s model' %self.bores_list[i].bore)     
+                ax.plot(md.num2date(np.arange(self.bores_list[i]._time_begin, self.bores_list[i]._time_end+1)), self.bores_list[i].head_modeled[self.bores_list[i]._time_model], c=colors[i], label='%s model' %self.bores_list[i].bore) 
         plt.ylabel('Groundwater head [m]')
         plt.xlabel('Time [Years]')
         ax.legend(loc='upper left', bbox_to_anchor=(1, 1.014))
@@ -108,7 +128,7 @@ class TimeSeries:
     def __repr__(self):
         return 'Time Series Data of Bore: %s' %self.bore
         
-    def solve(self, TFN, X0, method):
+    def solve(self, TFN, X0, method=0):
         
         """ 
         Solves the time series model
@@ -127,7 +147,7 @@ class TimeSeries:
             
         Returns
         -------
-            - an array of the optimum parameters set (self.parameters_opt)
+            - an array of the optimum parameters set (self.parameters_optimized)
             - array with modeled heads (self.head_modeled)
             - array with innivations (self.innovations)
         
@@ -137,121 +157,68 @@ class TimeSeries:
         that depends on the Transfer Functions Noise Model that is used. 
         
         """
-        # Define the TFN Model and the Initial parameters
-        if TFN == 'TFN1':
-            initial_parameters = [X0['A'],X0['a'],X0['n'],np.mean(self.head_observed),X0['Alpha']]
-        elif TFN == 'TFN2':
-            initial_parameters = [X0['A'],X0['a'],X0['n'],np.mean(self.head_observed),X0['Alpha'], X0['f']]
-            self.Parameter_Names = ['A','a','n','d','alpha','f']
-        elif TFN == 'TFN3':
-            initial_parameters = [X0['A'],X0['a'],X0['n'],np.mean(self.head_observed),X0['Alpha']]
-        elif TFN == 'TFN4':
-            initial_parameters = [X0['A'],X0['a'],X0['n'],np.mean(self.head_observed),X0['Alpha'],X0['S_cap'],X0['K_sat'], X0['Beta']]
-            self.Parameter_Names = ['A','a','n','d','alpha','S_cap', 'K_sat','Beta']
-        else:
-            print 'Error: TFN model does not exist, chose another one or check TFN_Model.py!'
-        
+        # Define the TFN Model
         self.TFN = getattr(TFN_Model, TFN)
         self._TFN = TFN
     
         InputData = [self._time_model, self.precipitation, self.evaporation]
         
-        self.parameters = initial_parameters
-        def save_par(par):
-            self.parameters = np.vstack((self.parameters, par))
+        #self.parameters = initial_parameters
         
         if method == 0:
-            self.parameters_opt= fmin(self.swsi, initial_parameters, args=(InputData,), callback=save_par, maxiter=10000)
-        elif method == 1: 
-            res = cma.fmin(self.swsi, initial_parameters, 2.0, args=(InputData,), options={'ftarget': 1e-5})
-            self.parameters_opt = res[0]
-            self.res = res # NOT USED, BUT MIGHT INCLUDE THE PARAMETERS
+            X0.add('d', value=np.mean(self.head_observed))
+            self.result = minimize(self.objective_function, X0, args=(InputData,), method='leastsq')
+            self.parameters_optimized = self.result.params.valuesdict()
+            if self.result.success: 
+                print 'Optimization completed succesfully!'
+                print(report_fit(self.result))
+        elif method == 1:  # Support depreciated when lmfit is 
+            res = cma.fmin(self.swsi, X0, 2.0, args=(InputData,), options={'ftarget': 1e-5})
+            self.parameters_optimized = res[0]
             self.parameters = np.loadtxt('outcmaesxrecentbest.dat', skiprows=2)[:,5:]
             self.correlation_matrix = res[-2].correlation_matrix()
-        elif method == 2:
-            self.parameters_opt, self.correlation_matrix = leastsq(self.mininnovations, initial_parameters, args=(InputData,))
-        self.simulate(self._TFN, self.parameters_opt, 1)    
-
-    def monte_carlo(self, TFN, X0, n=1000):
-        """
-        Runs a monte carlo analysis
-        
-        parameters
-        ----------     
-        TFN: string 
-            define the name of the Transfer function noise model you want to use (see TFN_Model.py)
-        X0: array
-            An two row array with the lower and upper bounds of the parameters            
-            E.g. X0 = np.array([[2.0, 8.0, 1.0],[2.6, 10.0]])
-        n: integer
-            number of runs that are performed.
             
-        Returns
-        -------
-            - an array of the optimum parameters set (self.parameters_opt)
-            - an array with the results of the objective function
-            - an array with al the used parameters
-        
-        See Also
-        --------
-        
-        """
-        self.TFN = getattr(TFN_Model, TFN)    
-        InputData = [self.TFN, self._time_model, self.precipitation, self.evaporation, self.head_observed,self._time_observed, self._time_steps, self._time_start]
-        
-        rnd = np.random.uniform(0.0, 1.0, (n,len(X0[0])))
-        self.parameters = rnd * (X0[1] - X0[0]) + X0[0]
-        self.result = []
-        
-        for i in range(n):
-            self.result = np.append(self.result, self.swsi(self.parameters[i], InputData))
-        
-        self.parameters_opt = self.parameters[self.result.argmin()]
-        print 'SWSI is:', self.result[self.result.argmin()]
-        return self.result, self.parameters            
+        self.simulate(InputData, self._TFN, self.result.params)    
     
-    def simulate(self, TFN, parameters, solver=1):
+    def simulate(self, InputData, TFN, parameters, solver=1):
         """
         Simulate the groundwater levels with a certain parameter set
         """        
-        InputData = [self._time_model, self.precipitation, self.evaporation]
-        # Calculate the Explained Variance Percentage
-        alpha = parameters[4]
+        self.swsi_value = self.swsi(parameters, InputData ) #Also calculates a new model? Is this still usefull>?
+        
         i = self._time_observed > self._time_start
-        self.explained_variance = (np.var(self.head_observed[i])**2 - np.var(self.head_modeled[self._time_observed[i]]-self.head_observed[i])**2)/np.var(self.head_observed[i])**2*100.
+        self.explained_variance = (np.var(self.head_observed[i])**2 - np.var(self.head_modeled[self._time_observed[i]]-self.head_observed[i])**2)/np.var(self.head_observed[i])**2*100. # Calculate the Explained Variance Percentage
                 
         self.rmse = np.sqrt(sum((self.head_modeled[self._time_observed[i]]-self.head_observed[i])**2) / len(self.head_observed[i]))
         self.avg_dev = sum(self.head_modeled[self._time_observed[i]]-self.head_observed[i]) / len(self.head_observed[i])
-        self.swsi_value = self.swsi(self.parameters_opt, InputData )
-
+        
     '''This section contains the objective functions and diagnostic tests.'''
 
 #%% swsi constitutes the adapted version of the Sum of weighted squared innovations (swsi) developed by asmuth et al. (2005). For large values of alpha and small timesteps the numerator approaches zero. Therefore, Peterson et al. (2014) adapted the swsi function, making the numerator a natural log and changing the product operator to a summation.
    
     def swsi(self, parameters, InputData, solver=1):
-        alpha = 15.
+        alpha = 10.0 ** parameters['alpha'].value
         self.head_modeled, self.recharge = self.TFN(parameters, InputData, solver=solver)
         self.residuals = self.head_observed - self.head_modeled[self._time_observed]
         self.innovations = self.residuals[1:] - (self.residuals[0:-1] * np.exp(-self._time_steps/alpha))
         innovations = self.innovations[self._spinup::1]  # Select only innovations after the spinup period
         N = len(innovations)                        # Number of innovations
         dt = self._time_steps[-N:]                  # 
-        numerator = np.exp(sum(np.log(1 - np.exp(-2.0 / alpha * dt)))*(1.0/N))
+        numerator = np.exp((1.0/N) * sum(np.log(1 - np.exp(-2.0 / alpha * dt))))
         self.swsi_value = np.sqrt(sum( (numerator / (1 - np.exp(-2.0 / alpha * dt ))) * innovations**2))
-        return self.swsi_value
-
-    def rmse(self, parameters, InputData, solver=1): #RMSE Objective Function
-        self.head_modeled= self.TFN(parameters, InputData, solver=solver)[0]
-        i = self._time_observed > self._time_start
-        rmse = np.sqrt(sum((self.head_modeled[self._time_observed[i]]-self.head_observed[i])**2) / len(self.head_observed[i]))
-        return rmse   
+        return self.swsi_value 
 #       
-    def mininnovations(self, parameters, InputData, solver=1):
-        alpha = 15.
+    def objective_function(self, parameters, InputData, solver=1):
+        #self.parameters = np.vstack((self.parameters, parameters))
+        alpha = 10.**parameters['alpha'].value
         self.head_modeled, self.recharge = self.TFN(parameters, InputData, solver=solver)
         self.residuals = self.head_observed - self.head_modeled[self._time_observed]
         self.innovations = self.residuals[1:] - (self.residuals[0:-1] * np.exp(-self._time_steps/alpha))
         innovations = self.innovations[self._spinup::1]  # Select only innovations after the spinup period
+        N = len(innovations)                        # Number of innovations
+        dt = self._time_steps[-N:]                  # 
+        numerator = np.exp((1.0/N) * sum(np.log(1 - np.exp(-2.0 / alpha * dt))))
+        innovations= (numerator / (1 - np.exp(-2.0 / alpha * dt ))) * innovations**2.
         return innovations        
               
 #%% In this section the functions are defined that relate to the plotting of different forcings and results. Each function starts with plot_function to be able to quickly find these modules.        
@@ -272,7 +239,7 @@ class TimeSeries:
         
     def plot_results(self, ylim=[]):
         
-        plt.figure('Results %s' %self._TFN, figsize=(15,9))
+        plt.figure('%s_%s' %(self.bore,self._TFN), figsize=(15,9))
         plt.suptitle('GWTSA %s Model Results' %self._TFN, fontsize=16, fontweight='bold')
         gs = plt.GridSpec(3, 4, wspace=0.2)
 
@@ -293,7 +260,8 @@ class TimeSeries:
         plt.legend(['Observed Head','Modeled Head'], loc=0)
         plt.ylabel('Groundwater head [m]')
         plt.axvline(md.num2date(self._time_begin + self._time_start), c='grey', linestyle='--', label='Spinup period')
-        plt.text(md.num2date(self._time_begin + self._time_start), 0.0, 'Spinup period2')  # Not working yet?!
+        #plt.text(md.num2date(self._time_begin + self._time_start), 0.0, 'Spinup period2')  # Not displaying label yet?!
+        plt.ylim(min(self.head_observed), max(self.head_observed))
         if ylim == '':
             plt.ylim(ylim[0],ylim[1])
               
@@ -307,19 +275,20 @@ class TimeSeries:
         
         # Plot the Impulse Response Function
         ax4 = plt.subplot(gs[0,-1])    
-        A = 10**self.parameters_opt[0]
-        a = 10**self.parameters_opt[1]
-        Fs = A * gammainc(self.parameters_opt[2], self._time_model/a)
+        A = 10**self.parameters_optimized['A']
+        a = 10**self.parameters_optimized['a']
+        n = self.parameters_optimized['n']
+        Fs = A * gammainc(n, self._time_model/a)
         Fb = Fs[1:] - Fs[0:-1]
         plt.plot(self._time_model[0:-1],Fb)
-        plt.xlim(0,np.where(np.cumsum(Fb)>0.999*sum(Fb))[0][0]) # cut off plot after 99.9% of the response
+        plt.xlim(0,np.where(np.cumsum(Fb)>0.99*sum(Fb))[0][0]) # cut off plot after 99.0% of the response
         plt.title('Impulse Response')
         
         # Plot the Model Parameters (Experimental)
         ax5 = plt.subplot(gs[1,-1])
         ax5.xaxis.set_visible(False)
         ax5.yaxis.set_visible(False)
-        text = np.vstack((self.Parameter_Names,self.parameters_opt)).T
+        text = np.vstack((self.parameters_optimized.keys(),self.parameters_optimized.values())).T
         colLabels=("Parameter", "Value")
         ax5.table(cellText=text, colLabels=colLabels, loc='center') 
     
@@ -330,7 +299,9 @@ class TimeSeries:
         plt.text(0.05, 0.80, 'SWSI: %.2f meter' %self.swsi_value, fontsize=12 )
         plt.text(0.05, 0.60, 'Explained variance: %.2f %s' %( self.explained_variance, '%'), fontsize=12 )
         plt.text(0.05, 0.40, 'RMSE: %.2f meter' %self.rmse, fontsize=12)        
-        plt.text(0.05, 0.20, 'Average deviation: %.2f meter' %self.avg_dev, fontsize=12)  
+        plt.text(0.05, 0.20, 'Average deviation: %.2f meter' %self.avg_dev, fontsize=12)
+        
+        plt.savefig('%s_%s.eps' %(self.bore,self._TFN), format='eps', bbox_inches='tight')
 
     def plot_diagnostics(self):
         plt.figure('Diagnostics %s' %self._TFN, figsize=(15,9))
@@ -339,22 +310,22 @@ class TimeSeries:
         
         # Plot the parameter evolutions
         ax1 = plt.subplot(gs[0:2,0:2])
-        plt.plot(self.parameters)
+        #plt.plot(self.parameters)
         plt.title('parameters evolution')
         plt.ylabel('parameter value')
         plt.xlabel('iteration')
-        plt.legend(self.Parameter_Names)
+        plt.legend(self.result.var_names)
         
         try:
-            self.correlation_matrix
+            self.result.covar
             ax2 = plt.subplot(gs[0:2,2:4])
-            plt.pcolormesh(self.correlation_matrix, cmap='coolwarm', alpha=0.6)
-            plt.xticks(np.arange(0.5,len(self.correlation_matrix)+0.5,1),self.Parameter_Names, rotation=40, ha='right')
-            plt.yticks(np.arange(0.5,len(self.correlation_matrix)+0.5,1),self.Parameter_Names, rotation=40, ha='right')
+            plt.pcolormesh(self.result.covar, cmap='coolwarm', alpha=0.6)
+            plt.xticks(np.arange(0.5,len(self.result.covar)+0.5,1),self.result.var_names, rotation=40, ha='right')
+            plt.yticks(np.arange(0.5,len(self.result.covar)+0.5,1),self.result.var_names, rotation=40, ha='right')
             plt.colorbar()
-            plt.title('correlation matrix')
+            plt.title('covariance matrix')
             
-            for (i, j), z in np.ndenumerate(self.correlation_matrix):
+            for (i, j), z in np.ndenumerate(self.result.covar):
                 plt.text(j+0.5, i+0.5, '{:0.2f}'.format(z), ha='center', va='center', color='darkslategrey')
                 
         except:
@@ -369,7 +340,7 @@ class TimeSeries:
         ax4 = plt.subplot(gs[2:4,2:4])  
         ax4.xaxis.set_visible(False)
         ax4.yaxis.set_visible(False)
-        text = np.vstack((self.Parameter_Names,self.parameters_opt)).T
+        text = np.vstack((self.parameters_optimized.keys(),self.parameters_optimized.values())).T
         colLabels=("Parameter", "Value")
         ax4.table(cellText=text, colLabels=colLabels, loc='center')                   
         
@@ -386,13 +357,6 @@ class TimeSeries:
         plt.xlabel('Time [Years]',size=20)
         plt.legend('Precipitation','Potential Evapotranspiration')
         plt.title('Forcings',size=20)
-        
-    def plot_impulseResponseFunction(self):
-        plt.figure()
-        Fs = self.parameters_opt[0] * gammainc(self.parameters_opt[2], self._time_model/self.parameters_opt[1])
-        Fb = Fs[1:] - Fs[0:-1]
-        plt.plot(self._time_model[0:-1],Fb)
-        
 #%%
 
 

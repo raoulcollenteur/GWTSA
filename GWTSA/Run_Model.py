@@ -7,36 +7,41 @@ this is a time series analysis model
 
 #Import all the packages needed
 from GWTSA import *
+import glob
 
-#import glob
-#bores = glob.glob('Test_Data/Selectie/*.csv')
+#bores = glob.glob('Test_Data/*.csv')
 
 plt.close('all')
 
-bores = ['Test_Data/B27C0041001_1.csv','Test_Data/B27C0041001_1.csv']
-#bores = ['Test_Data/Selectie/B27C0002001_1.csv', 'Test_Data/Selectie/B27C0041001_1.csv', 'Test_Data/Selectie/B27C0049001_1.csv', 'Test_Data/Selectie/B27D0001001_1.csv', 'Test_Data/Selectie/B33A0113001_1.csv', 'Test_Data/Selectie/B33C0135001_1.csv', 'Test_Data/Selectie/B33D0115001_1.csv', 'Test_Data/Selectie/B33D0217001_1.csv', 'Test_Data/Selectie/B40B0304001_1.csv'
+bores = ['Test_Data/B27C0049001_1.csv']
+#bores = ['Test_Data/B27C0002001_1.csv', 'Test_Data/B27C0041001_1.csv', 'Test_Data/B27C0049001_1.csv', 'Test_Data/B27D0001001_1.csv', 'Test_Data/B33A0113001_1.csv', 'Test_Data/B33C0135001_1.csv', 'Test_Data/B33D0115001_1.csv', 'Test_Data/B33D0217001_1.csv', 'Test_Data/B40B0304001_1.csv']
 
 forcing = 'Test_Data/KNMI_Bilt.txt'
        
-ml = Model(bores,forcing)
+ml = Model(bores,forcing, 3000)
 
-TFN = ['TFN4','TFN2','TFN2','TFN2','TFN2','TFN2','TFN2','TFN2','TFN2','TFN2','TFN2','TFN2','TFN2','TFN2','TFN2','TFN2']
-X0 = {'A': 3.2,'a': 2.5, 'n': 1.6,'Alpha': 15, 'S_cap': -1.0, 'K_sat':-2.0, 'Beta': 2.0, 'D': -3, 'f': -0.1} # initial parameters
+#TFN = ['nonlinear', 'nonlinear', 'nonlinear', 'nonlinear', 'nonlinear', 'nonlinear', 'nonlinear', 'nonlinear', 'nonlinear', 'nonlinear']
+TFN = ['nonlinear','linear','linear','linear','linear','linear','linear','linear','linear','linear']
+#TFN = ['linear','nonlinear','linear','nonlinear','linear','linear','linear','linear','linear','linear']
 
-ml.solve(TFN, X0, 2)
+X0 = Parameters()
+#           (Name,  Value,  Vary,   Min,  Max,  Expr)
+X0.add_many(('A',   3.1,    True,   None, None,  None),
+           ('a',    2.5,    True,   None, None,  None),
+           ('n',    1.6,    True,   None, None,  None),
+           ('alpha',0.50,   True,   None, None,  None),
+           ('scap', -1.0,   True,   None, None,  None),
+           ('ksat', -2.0,   True,   None, None,  None),
+           ('beta', 3.0,    True,   0.5,  3.0,   None),
+           ('imax', -3.0,   False,  None, None,  None))
+           #('f', -2.0,   True,   None, None,  None), )
+           
+ml.solve(TFN, X0, 0)
 
 ml.plot(1)
-
+ml.bores_list[0].plot_diagnostics()
 ml.bores_list[0].plot_results()
-ml.bores_list[1].plot_results()
 
-#X0 = ml.bores_list[0].parameters_opt
-#ml.solve(TFN, X0, 2)
-#ml.plot(0)
-
-#ml.bores_list[0].plot_results()
-#ml.bores_list[1].plot_results()
-#ml.bores_list[0].plot_diagnostics()
 
 #X0 = np.array([[100.0, 0.0, 0.8, 6.0, 1.7, -0.2],[1000, 1000.0, 2.0, 7.0, 2.3, 0.0]])
 #mont = ts.monte_carlo('TFN2', X0, 10000)
@@ -55,3 +60,4 @@ ml.bores_list[1].plot_results()
 #Check normal distribution of innovations
 #plt.figure()
 #plt.hist(ts.innovations, 50)
+
