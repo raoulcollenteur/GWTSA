@@ -7,7 +7,7 @@ Created on Tue Nov 18 14:34:13 2014
 #Import all the packages needed for the simulation
 import numpy as np
 from scipy.special import gammainc
-from Unsat_Zone import percolation
+from Unsat_Zone import percolation, pistonflow, combination
 from scipy.signal import fftconvolve
 
 
@@ -32,7 +32,7 @@ def linear(parameters, InputData, solver=0):
     #Recharge model
     recharge = P - f * E     
     
-        # Set the value for the timestep to calculate the innovations
+    #Fs = np.cumsum((A*time_model**(n-1)*np.exp(-time_model/a))/(((n-1)*a)**(n-1)*np.exp(1-n)))
     Fs = A * gammainc(n, time_model/a) # Step response function based on pearsonIII
     Fb = Fs[1:] - Fs[0:-1] #block reponse function
     head_modeled = d + fftconvolve(recharge,Fb)  
@@ -51,7 +51,7 @@ def nonlinear(parameters,InputData, solver):
     S_cap = 10.0**parameters['scap'].value
     K_sat = 10.0**parameters['ksat'].value
     Beta = parameters['beta'].value       
-    Imax = 10.0** parameters['imax'].value
+    Imax = parameters['imax'].value
 
     # unpack all the data that is needed for the simulation
     time_model = InputData[0]
@@ -67,7 +67,55 @@ def nonlinear(parameters,InputData, solver):
     head_modeled = d + fftconvolve(recharge,Fb)    
     return [head_modeled, recharge]
     
+def nonlinear1(parameters,InputData, solver):
+    # Unpack all the parameters that should be calibrated    
+    A = 10.0**parameters['A'].value
+    a = 10.0**parameters['a'].value
+    n = parameters['n'].value
+    d = parameters['d'].value
+    S_cap = 10.0**parameters['scap'].value
+    Beta = parameters['beta'].value       
+    Imax = parameters['imax'].value
 
+    # unpack all the data that is needed for the simulation
+    time_model = InputData[0]
+    P = InputData[1]
+    E = InputData[2]
+    dt= 1 
+    
+    #Recharge model
+    recharge = pistonflow(time_model, P, E, S_cap, Beta, Imax , dt, solver)[0]
+    time_model = np.arange(0,10000)
+    Fs = A * gammainc(n, time_model/a) # Step response function based on pearsonIII
+    Fb = Fs[1:] - Fs[0:-1] #block reponse function
+    head_modeled = d + fftconvolve(recharge,Fb)    
+    return [head_modeled, recharge]
+    
+def nonlinear2(parameters,InputData, solver):
+    # Unpack all the parameters that should be calibrated    
+    A = 10.0**parameters['A'].value
+    a = 10.0**parameters['a'].value
+    n = parameters['n'].value
+    d = parameters['d'].value
+    S_cap = 10.0**parameters['scap'].value
+    K_sat = 10.0**parameters['ksat'].value
+    Beta = parameters['beta'].value       
+    Imax = parameters['imax'].value
+
+    # unpack all the data that is needed for the simulation
+    time_model = InputData[0]
+    P = InputData[1]
+    E = InputData[2]
+    dt= 1 
+    
+    #Recharge model
+    recharge = combination(time_model, P, E, S_cap, K_sat, Beta, Imax , dt, solver)[0]
+    time_model = np.arange(0,10000)
+    #Fs = np.cumsum((A*time_model**(n-1)*np.exp(-time_model/a))/(((n-1)*a)**(n-1)*np.exp(1-n)))
+    Fs = A * gammainc(n, time_model/a) # Step response function based on pearsonIII
+    Fb = Fs[1:] - Fs[0:-1] #block reponse function
+    head_modeled = d + fftconvolve(recharge,Fb)    
+    return [head_modeled, recharge]    
 '''
 TFN3 defines a TFN model that deals with the recharge a little more, adding a parameter 'f' that determines what part of the evaporation is extracted from the recharge. 
 '''

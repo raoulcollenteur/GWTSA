@@ -12,28 +12,10 @@ from scipy.special import gammainc
 import TFN_Model
 import cma
 from statsmodels.tsa.stattools import acf
-from lmfit import minimize, Parameters, Parameter, report_fit
+from lmfit import minimize, Parameters, Parameter, report_fit, conf_interval
+from pandas import Series
 
 #%% Model Class
-def latex_plot():
-    #from matplotlib import rcParams
-    params = {'backend': 'ps',
-              #'text.latex.preamble': ['\usepackage{amsmath}','\usepackage[utf8]{inputenc}'],
-              #'text.latex.unicode': True,
-              'axes.labelsize': 10, 
-              'axes.titlesize': 10,
-              'font.size': 10, 
-              'font.family': 'serif',
-              #'font.serif': 'Bookman',
-              'legend.fontsize': 10,
-              'xtick.labelsize': 8,
-              'ytick.labelsize': 8,
-              #'text.usetex': 0,
-              #'text.dvipnghack' : True,
-              'figure.figsize': [8.29,5],
-              'figure.dpi': 300
-    }
-    return plt.rcParams.update(params)
 
 class Model:
     def __init__(self, bores, forcing, timestart=2000):
@@ -123,6 +105,7 @@ class TimeSeries:
         self.evaporation = ClimateData[:,2] / cl_unit 
         self.evaporation[self.evaporation < 0.0] = 0.0
         self.bore = bore[-17:-8]
+        self._time_climate = md.num2date(ClimateData[:,0])
         print 'Model setup for bore id %s completed succesfully.' %self.bore
 
     def __repr__(self):
@@ -187,7 +170,7 @@ class TimeSeries:
         self.swsi_value = self.swsi(parameters, InputData ) #Also calculates a new model? Is this still usefull>?
         
         i = self._time_observed > self._time_start
-        self.explained_variance = (np.var(self.head_observed[i])**2 - np.var(self.head_modeled[self._time_observed[i]]-self.head_observed[i])**2)/np.var(self.head_observed[i])**2*100. # Calculate the Explained Variance Percentage
+        self.explained_variance = (np.var(self.head_observed[i])**2 - np.var(self.head_modeled[self._time_observed[i]] -            self.head_observed[i])**2)/np.var(self.head_observed[i])**2*100. # Calculate the Explained Variance Percentage
                 
         self.rmse = np.sqrt(sum((self.head_modeled[self._time_observed[i]]-self.head_observed[i])**2) / len(self.head_observed[i]))
         self.avg_dev = sum(self.head_modeled[self._time_observed[i]]-self.head_observed[i]) / len(self.head_observed[i])
@@ -239,17 +222,16 @@ class TimeSeries:
         
     def plot_results(self, ylim=[]):
         
-        plt.figure('%s_%s' %(self.bore,self._TFN), figsize=(15,9))
-        plt.suptitle('GWTSA %s Model Results' %self._TFN, fontsize=16, fontweight='bold')
+        plt.figure('%s_%s' %(self.bore,self._TFN))
+        plt.suptitle('GWTSA %s Model Results for bore %s' %(self._TFN, self.bore), fontweight='bold')
         gs = plt.GridSpec(3, 4, wspace=0.2)
 
         # Plot the recharge
+        self.recharge = Series(self.recharge, index=self._time_climate)
         ax1 = plt.subplot(gs[0,:-1])
-        plt.bar(md.num2date(np.arange(self._time_begin, self._time_end+1)), self.recharge, lw=0)
-        plt.ylabel('Recharge [m/d]')
-        plt.legend(['Recharge'])
+        self.recharge.resample('3M', how='sum').plot('bar')
+        plt.ylabel('Recharge [m/3 months]')
         ax1.xaxis.set_visible(False)
-        plt.title('%s' % (self.bore))   
         
         # Plot the Groundwater levels
         ax2 = plt.subplot(gs[1,:-1])
@@ -257,21 +239,19 @@ class TimeSeries:
         plt.plot(md.num2date(np.arange(self._time_begin, self._time_end+1)), 
                  self.head_modeled[self._time_model], '-')
         ax2.xaxis.set_visible(False)         
-        plt.legend(['Observed Head','Modeled Head'], loc=0)
-        plt.ylabel('Groundwater head [m]')
+        plt.legend(['Observed Head','Modeled Head'], loc=3)
+        plt.ylabel('Gwl [m]')
         plt.axvline(md.num2date(self._time_begin + self._time_start), c='grey', linestyle='--', label='Spinup period')
         #plt.text(md.num2date(self._time_begin + self._time_start), 0.0, 'Spinup period2')  # Not displaying label yet?!
         plt.ylim(min(self.head_observed), max(self.head_observed))
-        if ylim == '':
-            plt.ylim(ylim[0],ylim[1])
               
         # Plot the residuals and innovations  
         ax3 = plt.subplot(gs[2,:-1])      
         plt.plot(md.num2date(self._time_axis), self.residuals, 'b')
         plt.plot(md.num2date(self._time_axis[0:-1]), self.innovations, 'orange')
-        plt.legend(['residuals','innovations'], loc=0)
+        plt.legend(['residuals','innovations'], loc=3)
         plt.ylabel('Error [m]')
-        plt.xlabel('Time [Years]')                         
+        plt.xlabel('Time [Years]')                        
         
         # Plot the Impulse Response Function
         ax4 = plt.subplot(gs[0,-1])    
@@ -288,7 +268,7 @@ class TimeSeries:
         ax5 = plt.subplot(gs[1,-1])
         ax5.xaxis.set_visible(False)
         ax5.yaxis.set_visible(False)
-        text = np.vstack((self.parameters_optimized.keys(),self.parameters_optimized.values())).T
+        text = np.vstack((self.parameters_optimized.keys(),[round(float(i), 3) for i in self.parameters_optimized.values()])).T
         colLabels=("Parameter", "Value")
         ax5.table(cellText=text, colLabels=colLabels, loc='center') 
     
@@ -296,10 +276,12 @@ class TimeSeries:
         ax6 = plt.subplot(gs[2,-1])   
         ax6.xaxis.set_visible(False)
         ax6.yaxis.set_visible(False)        
-        plt.text(0.05, 0.80, 'SWSI: %.2f meter' %self.swsi_value, fontsize=12 )
-        plt.text(0.05, 0.60, 'Explained variance: %.2f %s' %( self.explained_variance, '%'), fontsize=12 )
-        plt.text(0.05, 0.40, 'RMSE: %.2f meter' %self.rmse, fontsize=12)        
-        plt.text(0.05, 0.20, 'Average deviation: %.2f meter' %self.avg_dev, fontsize=12)
+        plt.text(0.05, 0.84, 'SWSI: %.2f meter' %self.swsi_value)
+        plt.text(0.05, 0.68, 'Expl. var: %.2f %s' %( self.explained_variance, '%'))
+        plt.text(0.05, 0.52, 'RMSE: %.2f meter' %self.rmse)        
+        plt.text(0.05, 0.36, 'Avg dev: %.2f meter' %self.avg_dev)
+        plt.text(0.05, 0.20, 'AIC: %.2f' %self.result.aic)
+        plt.text(0.05, 0.04, 'BIC: %.2f' %self.result.bic)
         
         plt.savefig('%s_%s.eps' %(self.bore,self._TFN), format='eps', bbox_inches='tight')
 
@@ -357,7 +339,74 @@ class TimeSeries:
         plt.xlabel('Time [Years]',size=20)
         plt.legend('Precipitation','Potential Evapotranspiration')
         plt.title('Forcings',size=20)
-#%%
+#%% Estiamte Sumax
+    def calcSumax(self, Cr=0.40, imax=0.001, T=20, EaMethod='gradual'):
+        from scipy.stats import gumbel_r
+        # Interception Reservoir
+        n = len(self.evaporation)
+        Si = np.zeros(n)
+        Pe = np.zeros(n)
+        Ei = np.zeros(n)
+        Ep = np.zeros(n)
+        
+        for t in range(n-1):    
+            Si[t+1] = Si[t]+self.precipitation[t+1]                      # Fill interception bucket with new rain
+            Pe[t+1] = np.max(((Si[t+1]-imax), 0.0))     # Calculate effective precipitation
+            Si[t+1] = Si[t+1] - Pe[t+1]                 # Update interception state
+            Ei[t+1] = np.min((Si[t+1], self.evaporation[t+1]))         # Evaporation from interception
+            Si[t+1] = Si[t+1] - Ei[t+1]                 # Update interception state
+            Ep[t+1] = self.evaporation[t+1] - Ei[t+1]                  # Update potential evapotranspiration   
+        
+        # Estimate Actual Evaporation
+        
+        # Averag actual evaporation [L/T]
+        Ea = np.min((sum((1.-Cr)*Pe), sum(Ep))) / n  # 1-Cr because Q = Cr * Pe
+        #Get seasonality back in there
+        EaAvgC = np.min((sum((1.-Cr)*Pe), sum(Ep))) / n  # 1-Cr because Q = Cr * Pe
+        
+        #Get seasonality back in there
+        if EaMethod == 'gradual':
+            EaAvg = np.ones(len(Ep)) * EaAvgC           # get timeseries with constant average Ea
+            a = np.min((Ep,EaAvg), axis=0)
+            A = sum(EaAvg - a)
+            B = sum(Ep - a)
+            Ea = A / B * (Ep - a) + a                   # Calculate Ea with similar pattern as Ep
+            
+        soildeficit = np.zeros(n)   
+        for t in range(n-1):
+            soildeficit[t+1] = np.min(((soildeficit[t] + Pe[t] - Ea[t]), 0.0))     
+        
+        soildeficit = Series(soildeficit, index=self._time_climate)
+        Sumax = np.sqrt(soildeficit.resample('A', how='min') ** 2. ) # Work with positive values
+    
+        Sumax.sort()
+        mu, sigma = gumbel_r.fit(Sumax)
+        #y = gumbel_r.pdf(Sumax, mu, sigma)
+        #plt.plot(Sumax,y)
+        #Sumax.hist()
+        #plt.axvline(gumbel_r.isf(1./T, loc=mu, scale=sigma)) #Causes trouble for multiple return periods
+    
+        return gumbel_r.isf(1./T, loc=mu, scale=sigma) 
 
+#%% Make a nicely looking latex plot! Just run this function before plotting :)
 
+def latex_plot():
+    #from matplotlib import rcParams
+    params = {'backend': 'ps',
+              #'text.latex.preamble': ['\usepackage{amsmath}','\usepackage[utf8]{inputenc}'],
+              #'text.latex.unicode': True,
+              'axes.labelsize': 8, 
+              'axes.titlesize': 8,
+              'font.size': 8, 
+              'font.family': 'serif',
+              #'font.serif': 'Bookman',
+              'legend.fontsize': 8,
+              'xtick.labelsize': 6,
+              'ytick.labelsize': 6,
+              #'text.usetex': 0,
+              #'text.dvipnghack' : True,
+              'figure.figsize': [8.29,5],
+              'figure.dpi': 150
+    }
+    return plt.rcParams.update(params)
 

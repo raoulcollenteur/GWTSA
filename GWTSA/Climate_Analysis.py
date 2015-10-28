@@ -49,3 +49,43 @@ plt.savefig('climate_deelen.eps', format='eps', bbox_inches='tight')
 
 PW_avg = data.RH.resample('M', how='sum', kind='YYYYMMDD')
 PW_avg[(PW_avg.index>1992) & (PW_avg.index<1996)].plot(kind='bar', color='lightskyblue', label='Precipitation')
+
+
+# Mass Curve Technique to estimate S_cap
+P = data.RH.resample('A', how='cumsum', kind='YYYYMMDD')
+E = data.EV24.resample('A', how='cumsum', kind='YYYYMMDD')
+R = P-E
+R.plot()
+
+
+#%% INFLUENCE 
+S = np.arange(0,1.,0.01)
+Beta = np.arange(0, 15, 0.5)
+Cr = np.ones((len(Beta),100))
+Scap=1.
+for i in range(len(Beta)):
+    Cr[i] = (S/Scap)**Beta[i]
+plt.figure()    
+plt.plot(Cr.T,S)
+#plt.plot((1-Cr).T, S)
+plt.ylabel('St'), plt.xlabel('Cr')
+plt.legend(['Recharge', 'UZ'])
+
+
+S = np.arange(0,1.,0.01)
+Beta = np.arange(0, 1.0, 0.01)
+Cr = np.ones((len(Beta),100))
+for i in range(len(Beta)):
+    Cr[i] = (1-(1-(S/Scap))**Beta[i])
+plt.figure()
+plt.plot(Cr.T, S)
+#plt.plot(1-Cr, S)
+plt.ylabel('St'), plt.xlabel('Cr,1-Cr')
+plt.legend(['Recharge', 'UZ'])
+
+
+
+
+
+
+

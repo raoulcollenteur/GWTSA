@@ -38,9 +38,6 @@ dS/dt = (P-I) - K_sat * (S/S_cap)**Beta - E_p * min(1, S/0.5S_cap)
 def percolation(Time_Model, P, E, S_cap = 1.0, K_sat = -1.5, Beta = 2.0, D = 0.0001 , dt = 1):
     """ This is the percolation function docstring 
     """    
-    K_sat = 10.0**K_sat
-    S_cap = 10.0**S_cap
-    D = 10.0**D
     error = 1.0e-5
     # Create an empty array to store the soil state in
     S = np.zeros(len(Time_Model)/dt) 
