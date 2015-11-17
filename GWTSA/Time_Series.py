@@ -42,21 +42,20 @@ class Model:
             self.bores_list[i].solve(TFN[i], X0, method, solver)
     
     def plot(self, modeled=1, savefig=False):
-        fig2 = plt.figure('Boreholes', figsize=(15,9))
+        fig2 = plt.figure('Boreholes', figsize=(8.3,5))
         colors=plt.cm.nipy_spectral(np.linspace(0,1,self.bores_number))
-        ax = fig2.add_subplot(111)
-        ax.set_position([0.05,0.1,0.8,0.8])
+        colors[1] = [0.47058823529411764, 0.7686274509803922, 1.0, 1.0]
         for i in range(self.bores_number):
-            ax.plot(md.num2date(self.bores_list[i]._time_axis), self.bores_list[i].head_observed,'.', c=colors[i])
+            plt.plot(md.num2date(self.bores_list[i]._time_axis), self.bores_list[i].head_observed,'.', c=colors[i])
             if modeled == 1:            
-                ax.plot(md.num2date(np.arange(self.bores_list[i]._time_begin, self.bores_list[i]._time_end+1)), self.bores_list[i].head_modeled, c=colors[i], label='%s, %s' %(self.bores_list[i].bore, self.bores_list[i]._TFN), linestyle='-') 
+                plt.plot(md.num2date(np.arange(self.bores_list[i]._time_begin, self.bores_list[i]._time_end+1)), self.bores_list[i].head_modeled, c=colors[i], label='%s, %s' %(self.bores_list[i].bore, self.bores_list[i]._TFN), linestyle='-') 
         plt.ylabel('Groundwater head [m]')
         plt.xlabel('Time [Years]')
-        ax.legend(loc='upper left', bbox_to_anchor=(1, 1.014))
+        plt.legend(loc=(0,1), ncol=3, frameon=False, handlelength=3)
         plt.axvline(self.bores_list[0]._date_calibration, color='k', linestyle='--')
 
         if savefig:
-            fig2.savefig('boreholes.eps', format='eps', bbox_inches='tight')       
+            fig2.savefig('Figures/boreholes.eps', format='eps', bbox_inches='tight')       
     
 #%% Time series class    
             
@@ -197,7 +196,9 @@ class TimeSeries:
       
     def objective_function(self, parameters, InputData):
         alpha = 10.0**parameters['alpha'].value
-        self.head_modeled, self.recharge = self.TFN(parameters, InputData)
+        self.head_modeled, recharge = self.TFN(parameters, InputData)
+        self.recharge = Series(recharge, index=self._time_climate)
+        self.recharge = self.recharge[self.recharge.index > md.num2date(self._time_begin)]
         self.head_modeled = self.head_modeled[self._time_spinup:self._time_model[-1]+1] #Select entire period
         self.residuals = self.head_observed - self.head_modeled[self._index_observed] 
         self.innovations = self.residuals[1:] - (self.residuals[0:-1] * np.exp(-self._time_steps/alpha))
@@ -253,7 +254,6 @@ class TimeSeries:
         gs = plt.GridSpec(3, 4, wspace=0.2)
 
         # Plot the recharge
-        self.recharge = Series(self.recharge, index=self._time_climate)
         ax1 = plt.subplot(gs[0,:-1])
         self.recharge.resample('A', how='sum').plot('bar')
         plt.ylabel('Recharge [m/year]')
@@ -283,13 +283,10 @@ class TimeSeries:
         
         # Plot the Impulse Response Function
         ax4 = plt.subplot(gs[0,-1])    
-        A = 10**self.parameters_optimized['A']
-        a = 10**self.parameters_optimized['a']
-        n = self.parameters_optimized['n']
         IRF = getattr(TFN_Model, 'IRF')
         Fb = IRF(self.result.params)
         plt.plot(Fb)
-        plt.xticks(range(0,5000,500))
+        plt.xticks(range(0,10000,500))
         plt.xlim(0,np.where(np.cumsum(Fb)>0.99*sum(Fb))[0][0]) # cut off plot after 99.0% of the response
         plt.text(5,0.0,'Peak Time: %i' %Fb.argmax(), verticalalignment='bottom')
         plt.title('Impulse Response')
@@ -315,7 +312,7 @@ class TimeSeries:
         plt.text(0.05, 0.04, 'BIC: %.2f' %self.result.bic)
         
         if savefig:
-            plt.savefig('%s_%s.eps' %(self.bore,self._TFN), format='eps', bbox_inches='tight')
+            plt.savefig('Figures/%s_%s.eps' %(self.bore,self._TFN), format='eps', bbox_inches='tight')
 
     def plot_diagnostics(self, savefig=True):
         plt.figure('Diagnostics %s_%s' %(self.bore,self._TFN))

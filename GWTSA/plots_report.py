@@ -129,3 +129,62 @@ plt.savefig('Figures/climate_deelen.eps', bbox_inches='tight')
 
 #%% Plot the boreholes used in this study
 
+#bores = glob.glob('Test_Data/*.csv')
+bores = [ 'Test_Data/B27D0001001_1.csv', 'Test_Data/B27C0049001_1.csv', 'Test_Data/B33A0113001_1.csv']
+
+bore = [] #Store de different boreholes data
+peak = [] #Store the 1995 peak moment
+
+
+parse = lambda x: md.datetime.datetime.strptime(x, '%d-%m-%Y')
+
+for i in range(len(bores)):
+    bore.append(read_csv('%s' %bores[i], parse_dates=True, index_col=2, skiprows=16, skipinitialspace=True, usecols=[2,5], date_parser=parse))
+    bore[i].rename(columns={'Stand (cm t.o.v. NAP)': 'h'}, inplace=True)
+    bore[i].h = bore[i].h/100.
+    #bore[i].h = bore[i].h-bore[i].h.mean()
+    #bore[i].h.plot()
+    bore[i] = bore[i][(bore[i].index > '1975-01-01 00:00:00') & (bore[i].index < '2006-01-01 00:00:00')]
+    peak.append(bore[i].h[bore[i].index > '1995-01-01 00:00:00'].argmax())
+    bores[i] = bores[i][-17:-8]
+    
+    
+    
+plt.figure(figsize=(8.3,2))
+plt.plot(bore[0].index, bore[0].h, linestyle='-', color='k', label='B27D00010')
+plt.plot(bore[1].index, bore[1].h, linestyle='--', color='k', label='B27C00490')
+plt.plot(bore[2].index, bore[2].h, linestyle='-', color=cyan, label='B33A01130')
+plt.xlabel('Time [Years]')
+plt.ylabel('GWL [m]')
+plt.legend(loc=(0,1), ncol=3, frameon=False, handlelength=3)
+plt.savefig('Figures/boreholes_plot.eps', bbox_inches='tight') 
+ 
+#%% Plot of the thickness of the unsaturated zone against the T_peak
+
+Thickness = [10.35, 34.02, 29.24, 6.34, 49.09, 30.95, 33.06, 23.02, 47.10] #Estimated based on ground level minus highest groundwater level 
+#plt.figure()
+#plt.plot(peak, Thickness, 'o')
+
+#days = []
+#for i in range(len(peak)):
+#    days.append(peak[i] - min(peak))
+#    days[i] = days[i].days
+#
+#plt.figure()
+##plt.xkcd()
+#plt.plot(Thickness, days, 'k+', markersize=10, markeredgewidth=3)
+#plt.ylabel('Relative Delay Time [Days]')
+#plt.xlabel('Thickness Unsaturated Zone [Meters]')
+#plt.ylim(-5,300)
+#plt.xlim(0,55)
+#for i in range(len(bores)):
+#    plt.annotate(bores[i],(Thickness[i],days[i]))
+#plt.savefig('delay.eps', format='eps', bbox_inches='tight')
+#
+#slope, intercept, r_value, p_value, std_er = linregress(days, Thickness)
+#y = intercept + slope * (np.linspace(0,300))
+#plt.plot(y,np.linspace(0,300), 'k--')
+#
+#W = bore[0].resample('2W')
+
+  
