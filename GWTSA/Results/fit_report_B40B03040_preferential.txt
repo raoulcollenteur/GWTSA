@@ -1,0 +1,17 @@
+[[Fit Statistics]]
+    # function evals   = 3609
+    # data points      = 179
+    # variables        = 7
+    chi-square         = 0.001
+    reduced chi-square = 0.000
+[[Variables]]
+    A:       2.80234520 +/- 0        (0.00%) (init= 2.4)
+    a:       1.89387989 +/- 0        (0.00%) (init= 2)
+    n:       3.76768523 +/- 0        (0.00%) (init= 1.5)
+    alpha:   2.99996626 +/- 0        (0.00%) (init= 2)
+    Srmax:   0.27 (fixed)
+    Kp:     -2.25000000 +/- 0        (-0.00%) (init=-2.25)
+    beta:    16.4104481 +/- 0        (0.00%) (init= 3)
+    imax:    0.0015 (fixed)
+    d:       26.4574752 +/- 0        (0.00%) (init= 26.61665)
+[[Correlations]] (unreported correlations are <  0.100)tr

@@ -6,7 +6,8 @@ Created on Tue Nov 18 14:34:13 2014
 
 #Import all the packages needed for the simulation
 import numpy as np
-from scipy.special import gammainc, gamma
+from scipy.special import gammainc
+from scipy.stats import norm
 from Unsat_Zone import perc, pref, comb
 from scipy.signal import fftconvolve
 
@@ -15,14 +16,20 @@ def IRF(parameters):
     A = 10.0** parameters['A'].value
     a = 10.0** parameters['a'].value
     n = parameters['n'].value
-    b = parameters['b'].value
-    
     time_model = np.arange(0,10000)
     Fs = A * gammainc(n, time_model/a) # Step response function based on pearsonIII
-    Fs = np.append(np.zeros(b), Fs)
     return Fs[1:] - Fs[0:-1] #block reponse function
-    #Fs = np.cumsum((A*time_model**(n-1)*np.exp(-time_model/a))/(((n-1)*a)**(n-1)*np.exp(1-n)))
-    #Fs[time_model>=b] = np.cumsum(A * (time_model[time_model>=b]-b)**(n-1)*np.exp(-(time_model[time_model>=b]-b)/a)/gamma(n))
+
+    
+def perc_IRF(parameters, recharge):    
+    mu = parameters['mu'].value
+    sig = parameters['sig'].value
+    
+    #Percolation impulse response    
+    Fs = norm.cdf(range(1000), mu, sig) #/norm.pdf(mu,mu,sig)
+    Fb = Fs[1:] - Fs[0:-1] #block reponse function
+    return fftconvolve(recharge,Fb)[0:len(recharge)]
+    
 
 
 def linear(parameters, InputData):
@@ -36,7 +43,7 @@ def linear(parameters, InputData):
     
     #Recharge model
     recharge = P - f * E     
-    
+    #recharge = perc_IRF(parameters, recharge)
     Fb = IRF(parameters) #block reponse function
     head_modeled = d + fftconvolve(recharge,Fb)  
     return [head_modeled, recharge]
@@ -59,6 +66,7 @@ def preferential(parameters, InputData):
     
     #Recharge model
     recharge = pref(time_model, P, E, Srmax, Beta, Imax , dt, solver)[0]
+    #recharge = perc_IRF(parameters, recharge)    
     Fb = IRF(parameters) #block reponse function
     head_modeled = d + fftconvolve(recharge,Fb)    
     return [head_modeled, recharge]    

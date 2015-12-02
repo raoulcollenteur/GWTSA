@@ -1,0 +1,27 @@
+[[Fit Statistics]]
+    # function evals   = 185
+    # data points      = 599
+    # variables        = 6
+    chi-square         = 0.004
+    reduced chi-square = 0.000
+[[Variables]]
+    A:       3.37699182 +/- 0.039847 (1.18%) (init= 3.4)
+    a:       2.57642810 +/- 0.042407 (1.65%) (init= 2.5)
+    n:       1.73669459 +/- 0.039961 (2.30%) (init= 1.5)
+    alpha:   3.18931426 +/- 0.164604 (5.16%) (init= 2)
+    f:       0.60678108 +/- 0.072622 (11.97%) (init= 1)
+    d:       5.31983550 +/- 0.409846 (7.70%) (init= 8.261267)
+[[Correlations]] (unreported correlations are <  0.100)
+    C(A, a)                      =  0.805 
+    C(a, n)                      = -0.780 
+    C(A, d)                      = -0.635 
+    C(f, d)                      =  0.572 
+    C(a, f)                      =  0.453 
+    C(A, n)                      = -0.380 
+    C(n, f)                      = -0.335 
+    C(a, alpha)                  =  0.291 
+    C(a, d)                      = -0.261 
+    C(A, alpha)                  =  0.228 
+    C(n, alpha)                  = -0.177 
+    C(A, f)                      =  0.166 
+    C(alpha, f)                  =  0.111 tr

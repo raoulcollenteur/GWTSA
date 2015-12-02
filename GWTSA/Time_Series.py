@@ -17,8 +17,6 @@ from statsmodels.tsa.stattools import acf
 from lmfit import minimize, Parameters, Parameter, report_fit, fit_report
 from pandas import Series
 
-
-
 #%% Model Class
 
 class Model:
@@ -29,12 +27,12 @@ class Model:
         for i in range(self.bores_number):
             self.bores_list.append(TimeSeries(bores[i], forcing, calibration, validation))
             
-    def add_bore(self, bores, forcing):
-        self.bores_list.append(TimeSeries(bores, forcing))
+    def add_bore(self, bores, forcing, calibration, validation):
+        self.bores_list.append(TimeSeries(bores, forcing, calibration, validation))
         self.bores_number += 1          # Increase number of boreholes
         
     def delete_bore(self, boreid):      #Not functional yet!!!
-        self.bores_list.remove(boreid)
+        self.bores_list.pop(boreid)
         self.bores_number -= 1
     
     def solve(self, TFN, X0, method=0, solver=1):       
@@ -42,9 +40,9 @@ class Model:
             self.bores_list[i].solve(TFN[i], X0, method, solver)
     
     def plot(self, modeled=1, savefig=False):
-        fig2 = plt.figure('Boreholes', figsize=(8.3,5))
+        fig2 = plt.figure('Boreholes')
         colors=plt.cm.nipy_spectral(np.linspace(0,1,self.bores_number))
-        colors[1] = [0.47058823529411764, 0.7686274509803922, 1.0, 1.0]
+        if self.bores_number>1: colors[1] = [0.47058823529411764, 0.7686274509803922, 1.0, 1.0] #Add cyan TUDelft color
         for i in range(self.bores_number):
             plt.plot(md.num2date(self.bores_list[i]._time_axis), self.bores_list[i].head_observed,'.', c=colors[i])
             if modeled == 1:            
@@ -102,7 +100,7 @@ class TimeSeries:
 
         # Import the precipitation and evaporation data and calculate the recharge
         ClimateData = np.genfromtxt('./%s' % forcing , delimiter=',', skip_header=rows[1], converters={1: md.datestr2num}, usecols=[1, 2, 3]);
-        ClimateData = ClimateData[(ClimateData[:,0] >= md.datestr2num('01-01-1960')) & (ClimateData[:,0] <= self._time_end)]
+        ClimateData = ClimateData[(ClimateData[:,0] <= self._time_end) & (ClimateData[:,0] > -999) & (ClimateData[:,2] >-999)] # Get climate series untill Time_end
         
         self.precipitation = ClimateData[:,1] / cl_unit 
         self.precipitation[self.precipitation < 0.0] = 0.0
@@ -170,7 +168,7 @@ class TimeSeries:
             if self.result.success: 
                 print 'Optimization completed succesfully!'
                 print(report_fit(self.result))
-                #np.savetxt('fit_report_%s_%s.txt' %(self.bore, self._TFN),(fit_report(self.result),), fmt='%str')
+                np.savetxt('Results/fit_report_%s_%s.txt' %(self.bore, self._TFN),(fit_report(self.result),), fmt='%str')
         else:
             X0.add('d', value=np.mean(self.head_observed))
             self.result = minimize(self.objective_function, X0, args=(InputData,), method=method)
@@ -262,22 +260,25 @@ class TimeSeries:
         
        # Plot the Groundwater levels
         ax2 = plt.subplot(gs[1,:-1])
-        plt.plot(md.num2date(self._time_axis), self.head_observed, 'k.')
+        plt.plot(md.num2date(self._time_axis), self.head_observed, 'k.', label='observed head')
         plt.plot(md.num2date(np.arange(self._time_begin, self._time_end+1)), 
-                 self.head_modeled, '-')
+                 self.head_modeled, '-', label='modeled head')
+        std = np.std(self.residuals)
+        plt.fill_between(md.num2date(np.arange(self._time_begin, self._time_end+1)),self.head_modeled-2*std, self.head_modeled+2*std, color='gray', alpha=0.3, label='95% confidence interval')
         ax2.xaxis.set_visible(False)         
-        plt.legend(['Observed Head','Modeled Head'], loc=2)
-        plt.ylabel('Gwl [m]')
-        plt.ylim(min(self.head_observed), max(self.head_observed))
+        plt.legend(loc=(0,1), ncol=3, frameon=False, handlelength=3)
+        plt.ylabel('Head [m]')
+        #plt.ylim(min(self.head_observed), max(self.head_observed))
         plt.axvline(self._date_calibration, color='k', linestyle='--')
         ymin, ymax = plt.ylim()
         plt.text(self._date_calibration,ymin+0.1, 'validation', verticalalignment = 'bottom')
+        
               
         # Plot the residuals and innovations  
-        ax3 = plt.subplot(gs[2,:-1])      
-        plt.plot(md.num2date(self._time_axis), self.residuals, 'b')
-        plt.plot(md.num2date(self._time_axis[0:-1]), self.innovations, 'orange')
-        plt.legend(['residuals','innovations'], loc=2)
+        ax3 = plt.subplot(gs[2,:-1], sharex=ax2)      
+        plt.plot(md.num2date(self._time_axis), self.residuals, 'b', label='residuals')
+        plt.plot(md.num2date(self._time_axis[0:-1]), self.innovations, 'orange', label='innovations')
+        plt.legend(loc=(0,1), ncol=3, frameon=False, handlelength=3)
         plt.ylabel('Error [m]')
         plt.xlabel('Time [Years]')                        
         
@@ -441,3 +442,23 @@ def latex_plot():
     }
     return plt.rcParams.update(params)
 
+def interface_plot():
+    #from matplotlib import rcParams
+    params = {'backend': 'ps',
+              #'text.latex.preamble': ['\usepackage{amsmath}','\usepackage[utf8]{inputenc}'],
+              #'text.latex.unicode': True,
+              'axes.labelsize': 12, 
+              'axes.titlesize': 12,
+              'font.size': 10, 
+              'font.family': 'serif',
+              #'font.serif': 'Bookman',
+              'legend.fontsize': 12,
+              'xtick.labelsize': 10,
+              'ytick.labelsize': 10,
+              #'text.usetex': 0,
+              #'text.dvipnghack' : True,
+              'figure.figsize': [16.29,10],
+              'figure.dpi': 300,
+              'figure.facecolor' : white
+    }
+    return plt.rcParams.update(params)

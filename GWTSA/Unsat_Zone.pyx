@@ -258,8 +258,8 @@ def comb(np.ndarray[np.int_t] Time_Model, np.ndarray[np.float_t, ndim=1] P, np.n
         Si[t+1] = Si[t] + P[t+1]                # Fill intercEpution bucket with new rain
         Pe[t+1] = c_max(0.0, Si[t+1] - Imax)    # Calculate effective precipitation
         Si[t+1] = Si[t+1] - Pe[t+1]             
-        Ei[t+1] = c_min(Si[t+1], E[t+1])       # Evaporation from intercEpution
-        Si[t+1] = Si[t+1] - Ei[t+1]             # Update intercEpution state
+        Ei[t+1] = c_min(Si[t+1], E[t+1])        # Evaporation from interception
+        Si[t+1] = Si[t+1] - Ei[t+1]             # Update interception state
         Epu[t+1] = E[t+1] - Ei[t+1]             # Update potential evapotranspiration    
     
         Last_S = S[t]
@@ -270,53 +270,53 @@ def comb(np.ndarray[np.int_t] Time_Model, np.ndarray[np.float_t, ndim=1] P, np.n
         
         S[t+1] = c_max(0.0, S[t] + dt * ( Pe[t] * (1 -(S[t] / Srmax)**Beta) - Kp * (S[t] / Srmax)**Gamma - Epu[t] * c_min(1.0, (S[t] / (0.5 * Srmax)) )))
         
-#        if solver == 1: #If implicit euler is used
-#            #Start the while loop for the newton-Raphson iteration   
-#            while abs(Last_S - S[t+1]) > error:
-#                if iteration > 100:
-#                    break #Check if the number of iterations is not too high  
-#                iteration += 1
-#                Last_S = S[t+1]      
-#           
-#                g = Last_S - S[t] - dt * ( Pe[t] * (1 -(Last_S / Srmax)**Beta) - Epu[t] * c_min(1.0, (Last_S / (0.5 * Srmax)) ))       
-#                # Derivative dEpuends on the state of the system
-#                if Last_S > (0.5 * Srmax):
-#                    g_derivative = 1.0 - dt * ( -Beta * Pe[t]* (Last_S / Srmax)**(Beta-1))
-#                else:        
-#                    g_derivative = 1.0 - dt * ( -Beta * Pe[t] * (Last_S / Srmax)**(Beta-1) - Epu[t] * (0.5 * Srmax) ) 
-#                
-#                # Check if there is no zero-division error            
-#                if np.isnan(g / g_derivative):
-#                    bisection = 0
-#                    break
-#                # if there is no zero-division error                
-#                else: # use newton raphson
-#                    S[t+1] = Last_S - g / g_derivative
+        if solver == 1: #If implicit euler is used
+            #Start the while loop for the newton-Raphson iteration   
+            while abs(Last_S - S[t+1]) > error:
+                if iteration > 100:
+                    break #Check if the number of iterations is not too high  
+                iteration += 1
+                Last_S = S[t+1]      
+           
+                g = Last_S - S[t] - dt * ( Pe[t] * (1 -(Last_S / Srmax)**Beta) - Kp * (Last_S / Srmax)**Gamma - Epu[t] * c_min(1.0, (Last_S / (0.5 * Srmax)) ))       
+                # Derivative depends on the state of the system
+                if Last_S > (0.5 * Srmax):
+                    g_derivative = 1.0 - dt * ( -Beta * Pe[t]* (Last_S / Srmax)**(Beta-1) -Gamma * Kp * (Last_S / Srmax)**(Gamma-1))
+                else:        
+                    g_derivative = 1.0 - dt * ( -Beta * Pe[t] * (Last_S / Srmax)**(Beta-1) -Gamma * Kp * (Last_S / Srmax)**(Gamma-1) - Epu[t] * (0.5 * Srmax) ) 
+                
+                # Check if there is no zero-division error            
+                if np.isnan(g / g_derivative):
+                    bisection = 0
+                    break
+                # if there is no zero-division error                
+                else: # use newton raphson
+                    S[t+1] = Last_S - g / g_derivative
 #            
-#            if bisection == 0:
-#                iteration = 0
-#                a = S[t]
-#                b = S[t+1]
-#                c = a + b / 2.0      
+            if bisection == 0:
+                iteration = 0
+                a = S[t]
+                b = S[t+1]
+                c = a + b / 2.0      
 #                
-#                while ((b - a)/2.0) > error:
-#                    if iteration > 100:
-#                        print 'iteration in bisection method exceeded 100', iteration                        
-#                        break   
-#                    iteration += 1 #increase the number of iterations by 1
-#    
-#                    if (c - S[t] - dt *( Pe[t] * (1-(c / Srmax)**Beta) - Epu[t] * c_min(1, (c / (0.5 * Srmax))) )) == 0.0:
-#                        return c # Return the current value if it is correct
-#                    elif (a - S[t] - dt *( Pe[t] * (1-(a / Srmax)**Beta) - Epu[t] * c_min(1.0, (a / (0.5 * Srmax))) )) * (c - S[t] - dt *( Pe[t] * (1-(c / Srmax)**Beta) - Epu[t] * c_min(1.0, (c / (0.5 * Srmax))) )) > 0.0 :
-#                        b = c
-#                    else : 
-#                        a = c
-#                        
-#                    c = a + b / 2.0 
-#                    
-#                S[t+1] = c    
-#                    
-#            assert ~np.isnan(S[t+1]), 'NaN-value calculated for soil state'       
+                while ((b - a)/2.0) > error:
+                    if iteration > 100:
+                        print 'iteration in bisection method exceeded 100', iteration                        
+                        break   
+                    iteration += 1 #increase the number of iterations by 1
+    
+                    if (c - S[t] - dt *( Pe[t] * (1-(c / Srmax)**Beta) - Kp * (c / Srmax)**Gamma - Epu[t] * c_min(1, (c / (0.5 * Srmax))) )) == 0.0:
+                        return c # Return the current value if it is correct
+                    elif (a - S[t] - dt *( Pe[t] * (1-(a / Srmax)**Beta) - Kp * (a / Srmax)**Gamma - Epu[t] * c_min(1.0, (a / (0.5 * Srmax))) )) * (c - S[t] - dt *( Pe[t] * (1-(c / Srmax)**Beta) - Kp * (c / Srmax)**Gamma - Epu[t] * c_min(1.0, (c / (0.5 * Srmax))) )) > 0.0 :
+                        b = c
+                    else : 
+                        a = c
+                       
+                    c = a + b / 2.0 
+                    
+                S[t+1] = c    
+                    
+            assert ~np.isnan(S[t+1]), 'NaN-value calculated for soil state'       
         
         S[t+1] = c_min(Srmax, c_max(0.0,S[t+1])) #Make sure the solution is larger then 0.0 and smaller than Srmax
         

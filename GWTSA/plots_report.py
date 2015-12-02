@@ -14,6 +14,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.dates as md
 from pandas import read_csv
+from scipy.special import gammainc, gamma
 
 plt.close('all')
 latex_plot()
@@ -187,4 +188,59 @@ Thickness = [10.35, 34.02, 29.24, 6.34, 49.09, 30.95, 33.06, 23.02, 47.10] #Esti
 #
 #W = bore[0].resample('2W')
 
+#%% Plot the Impulse, Step and block response
+
+# First start with the input parameters
+A = 100.
+a = 5.
+n = 1.5
+
+# Create the impulse response curve
+t1 = np.arange(0,30.,0.1)
+Fi = A*1./a**n*t1**(n-1) * np.exp(-t1/a)/gamma(n)
+
+# Create the step response curve
+t = np.arange(0,30.,1)
+Fs = A * gammainc(n,t/a) # Step response function based on pearsonIII
+#Fs = np.cumsum(Fi)
+
+# Create the block response curve
+Fb = Fs[1:] - Fs[0:-1]
+Fb = np.append(0, Fb) #This is only done for drawing the graph as you normally Convolute 
+
+# Make the plots
+plt.subplot(321)
+plt.bar([0],[1],width=0.1, color='gray')
+plt.xlim(-1,8)
+plt.ylim(0,1.2)
+plt.yticks([1],['$\infty$'])
+plt.ylabel('N [L]')
+
+plt.subplot(322)
+plt.plot(t1,Fi, 'k')
+plt.ylabel(r'$\theta$ [-]')
+
+plt.subplot(323)
+plt.bar([0],[1],width=8, color='gray')
+plt.ylim(0,1.2)
+plt.xlim(-1,8)
+plt.xticks([0, 8],[0, '$\infty$'])
+plt.ylabel('N [L]')
+
+plt.subplot(324)
+plt.plot(np.arange(len(Fs)),Fs, 'k')
+plt.ylabel(r'$\theta_s$ [-]')
+
+plt.subplot(325)
+plt.bar([0],[1],width=1, color='gray')
+plt.ylim(0,1.2)
+plt.xlim(-1,8)
+plt.ylabel('N [L]')
+plt.xlabel(' Time [T]')
+
+plt.subplot(326)
+plt.plot(np.arange(len(Fb)),Fb, 'k')
+plt.ylabel(r'$\theta_b$ [-]')
+plt.xlabel(' Time [T]')
   
+plt.savefig('Figures/responses.eps', bbox_inches='tight')   
