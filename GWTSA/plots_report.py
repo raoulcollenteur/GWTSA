@@ -145,11 +145,9 @@ for i in range(len(bores)):
     bore[i].h = bore[i].h/100.
     #bore[i].h = bore[i].h-bore[i].h.mean()
     #bore[i].h.plot()
-    bore[i] = bore[i][(bore[i].index > '1975-01-01 00:00:00') & (bore[i].index < '2006-01-01 00:00:00')]
-    peak.append(bore[i].h[bore[i].index > '1995-01-01 00:00:00'].argmax())
+    bore[i] = bore[i][(bore[i].index > '1975-01-01 00:00:00') & (bore[i].index < '2005-01-01 00:00:00')]
+    peak.append(bore[i].h[(bore[i].index > '1975-01-01 00:00:00') & (bore[i].index < '1980-01-01 00:00:00')].argmax())
     bores[i] = bores[i][-17:-8]
-    
-    
     
 plt.figure(figsize=(8.3,2))
 plt.plot(bore[0].index, bore[0].h, linestyle='-', color='k', label='B27D00010')
@@ -163,41 +161,56 @@ plt.savefig('Figures/boreholes_plot.eps', bbox_inches='tight')
 #%% Plot of the thickness of the unsaturated zone against the T_peak
 
 Thickness = [10.35, 34.02, 29.24, 6.34, 49.09, 30.95, 33.06, 23.02, 47.10] #Estimated based on ground level minus highest groundwater level 
-#plt.figure()
-#plt.plot(peak, Thickness, 'o')
 
-#days = []
-#for i in range(len(peak)):
-#    days.append(peak[i] - min(peak))
-#    days[i] = days[i].days
+days = []
+for i in range(len(peak)):
+    days.append(peak[i] - min(peak))
+    days[i] = days[i].days
+
+plt.figure()
+#plt.xkcd()
+plt.plot(Thickness, days, 'k+', markersize=10, markeredgewidth=3)
+plt.ylabel('Relative Delay Time [Days]')
+plt.xlabel('Thickness Unsaturated Zone [Meters]')
+plt.ylim(-5,300)
+plt.xlim(0,55)
+for i in range(len(bores)):
+    plt.annotate(bores[i],(Thickness[i],days[i]))
+plt.savefig('delay.eps', format='eps', bbox_inches='tight')
+
+slope, intercept, r_value, p_value, std_er = linregress(days, Thickness)
+y = intercept + slope * (np.linspace(0,300))
+plt.plot(y,np.linspace(0,300), 'k--')
 #
-#plt.figure()
-##plt.xkcd()
-#plt.plot(Thickness, days, 'k+', markersize=10, markeredgewidth=3)
-#plt.ylabel('Relative Delay Time [Days]')
-#plt.xlabel('Thickness Unsaturated Zone [Meters]')
-#plt.ylim(-5,300)
-#plt.xlim(0,55)
-#for i in range(len(bores)):
-#    plt.annotate(bores[i],(Thickness[i],days[i]))
-#plt.savefig('delay.eps', format='eps', bbox_inches='tight')
+#a = bore[0].resample('2W')
+#b = bore[1].resample('2W')
+#c = bore[2].resample('2W')
 #
-#slope, intercept, r_value, p_value, std_er = linregress(days, Thickness)
-#y = intercept + slope * (np.linspace(0,300))
-#plt.plot(y,np.linspace(0,300), 'k--')
+#a = a.interpolate(method='cubic')
+#a = a[(a.index > '1975-01-15 00:00:00') & (a.index < '2004-01-15 00:00:00')]
+#b = b.interpolate(method='cubic')
+#b = b[(b.index > '1975-01-15 00:00:00') & (b.index < '2004-01-15 00:00:00')]
+#c = c.interpolate(method='cubic')
+#c = c[(c.index > '1975-01-15 00:00:00') & (c.index < '2004-01-15 00:00:00')]
 #
-#W = bore[0].resample('2W')
+#import scipy
+#af = scipy.fft(a)
+#bf = scipy.fft(c)
+#d = scipy.ifft(af * scipy.conj(bf))
+#
+#time_shift = np.argmax(abs(d))
 
 #%% Plot the Impulse, Step and block response
 
 # First start with the input parameters
-A = 100.
+A = 10.
 a = 5.
 n = 1.5
 
 # Create the impulse response curve
 t1 = np.arange(0,30.,0.1)
 Fi = A*1./a**n*t1**(n-1) * np.exp(-t1/a)/gamma(n)
+Fi = A * t1**(n-1)*np.exp(-t1/a)
 
 # Create the step response curve
 t = np.arange(0,30.,1)
@@ -244,3 +257,36 @@ plt.ylabel(r'$\theta_b$ [-]')
 plt.xlabel(' Time [T]')
   
 plt.savefig('Figures/responses.eps', bbox_inches='tight')   
+
+#%% 
+
+X0 = Parameters()
+X0.add_many(('A',   0.20,    True,   None, None,  None),
+           ('t_p',    2.0,    True,   None, None,  None),
+           ('n',    1.5,    True,   None, None,  None))
+x1 = TFN_Model.IRF2(X0)
+
+X0 = Parameters()
+X0.add_many(('A',   0.0003,    True,   None, None,  None),
+           ('t_p',    2.5,    True,   None, None,  None),
+           ('n',    2.8,    True,   None, None,  None))
+x2 = TFN_Model.IRF2(X0)
+
+
+plt.figure(figsize=(4.15,3))    
+plt.plot(x1, '-', color='k', label='A=0.2, $T_{Peak}$=100, n=1.5')
+plt.plot(x2, '-', color=cyan, label='A=3e-4, $T_{Peak}$=316, n=2.8')
+
+
+plt.annotate(r'$\Delta T_{peak}$', xy=(100.0, 1.0), xytext=(316.0, 1.0), arrowprops={'arrowstyle': '<|-|>', 'color': 'k'}, va='center', fontsize=12)
+plt.annotate(r'$T_{peak}$', xy=(0.0, 1.2), xytext=(100.0, 1.2), arrowprops={'arrowstyle': '<|-|>', 'color': 'k'}, va='center', fontsize=12)
+plt.xlim(0,500)
+plt.ylim(0)
+plt.legend(loc=0)
+plt.xlabel('Time [Days]')
+plt.ylabel('Response [-]')
+plt.savefig('Figures/IRF_Peak.eps', bbox_inches='tight')
+
+
+#%% moving averages plots
+df20 = pd.rolling_mean(df.resample("1D", fill_method="ffill"), window=20*365, min_periods=1)

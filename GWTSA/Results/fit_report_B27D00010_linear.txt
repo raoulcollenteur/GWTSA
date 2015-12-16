@@ -1,26 +1,17 @@
 [[Fit Statistics]]
-    # function evals   = 174
-    # data points      = 625
-    # variables        = 6
-    chi-square         = 0.006
+    # function evals   = 2224
+    # data points      = 846
+    # variables        = 7
+    chi-square         = 0.026
     reduced chi-square = 0.000
 [[Variables]]
-    A:       3.51445611 +/- 0.037587 (1.07%) (init= 3.4)
-    a:       2.60976174 +/- 0.039942 (1.53%) (init= 2.5)
-    n:       1.78728764 +/- 0.040237 (2.25%) (init= 1.5)
-    alpha:   3.18015031 +/- 0.140561 (4.42%) (init= 2)
-    f:       0.70581351 +/- 0.068902 (9.76%) (init= 1)
-    d:       16.0363683 +/- 0.523954 (3.27%) (init= 19.47371)
-[[Correlations]] (unreported correlations are <  0.100)
-    C(A, a)                      =  0.817 
-    C(a, n)                      = -0.814 
-    C(f, d)                      =  0.643 
-    C(A, d)                      = -0.623 
-    C(A, n)                      = -0.437 
-    C(a, f)                      =  0.341 
-    C(A, alpha)                  =  0.325 
-    C(a, alpha)                  =  0.313 
-    C(a, d)                      = -0.309 
-    C(n, f)                      = -0.235 
-    C(n, alpha)                  = -0.217 
-    C(n, d)                      =  0.165 tr
+    A:       0.10769899 +/- 0        (0.00%) (init= 3)
+    n:       1.73995112 +/- 0        (0.00%) (init= 1.02)
+    alpha:   3          +/- 0        (0.00%) (init= 1)
+    Srmax:   0.27 (fixed)
+    beta:    3          +/- 0        (0.00%) (init= 3)
+    t_p:     2.19999998 +/- 0        (0.00%) (init= 1)
+    f:       0.55295161 +/- 0        (0.00%) (init= 1)
+    imax:    0.0015 (fixed)
+    d:       17.9681836 +/- 0        (0.00%) (init= 19.47371)
+[[Correlations]] (unreported correlations are <  0.100)tr

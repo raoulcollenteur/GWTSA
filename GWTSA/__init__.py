@@ -18,9 +18,6 @@ __version__='1.0.0.dev1'
 
 # Explicitly tell what modules should be imported
 from Time_Series import *
-import Unsat_Zone_Python
-
-
 
 # Cythonized Unsat_Zone Module has to be imported seperately as it is an different file extension
 from distutils.core import Extension

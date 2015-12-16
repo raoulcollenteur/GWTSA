@@ -12,11 +12,12 @@ Notes To self:
 import numpy as np
 import matplotlib.dates as md
 import matplotlib.pyplot as plt
-import TFN_Model
+from TFN_Model import *
 from statsmodels.tsa.stattools import acf
 from lmfit import minimize, Parameters, Parameter, report_fit, fit_report
-from pandas import Series
+from pandas import Series, DataFrame
 
+cyan = [120/255.,196./255,1.]
 #%% Model Class
 
 class Model:
@@ -35,9 +36,9 @@ class Model:
         self.bores_list.pop(boreid)
         self.bores_number -= 1
     
-    def solve(self, TFN, X0, method=0, solver=1):       
+    def solve(self, X0, IR='IRF', RM='linear', trend=None, method='leastsq', solver=1):       
         for i in range(self.bores_number):
-            self.bores_list[i].solve(TFN[i], X0, method, solver)
+            self.bores_list[i].solve(X0, IR, RM, trend, method, solver)
     
     def plot(self, modeled=1, savefig=False):
         fig2 = plt.figure('Boreholes')
@@ -102,7 +103,7 @@ class TimeSeries:
         ClimateData = np.genfromtxt('./%s' % forcing , delimiter=',', skip_header=rows[1], converters={1: md.datestr2num}, usecols=[1, 2, 3]);
         ClimateData = ClimateData[(ClimateData[:,0] <= self._time_end) & (ClimateData[:,0] > -999) & (ClimateData[:,2] >-999)] # Get climate series untill Time_end
         
-        self.precipitation = ClimateData[:,1] / cl_unit 
+        self.precipitation = ClimateData[:,1] / cl_unit *1.0
         self.precipitation[self.precipitation < 0.0] = 0.0
         self.evaporation = ClimateData[:,2] / cl_unit 
         self.evaporation[self.evaporation < 0.0] = 0.0
@@ -126,7 +127,7 @@ class TimeSeries:
     def __repr__(self):
         return 'Time Series Data of Bore: %s' %self.bore
         
-    def solve(self, TFN, X0, method='leastsq', solver=1):
+    def solve(self, X0, IR='IRF', RM='linear', trend=None, method='leastsq', solver=1):
         
         """ 
         Solves the time series model
@@ -156,13 +157,15 @@ class TimeSeries:
         
         """
         # Define the TFN Model
-        self.TFN = getattr(TFN_Model, TFN)
-        self._TFN = TFN
+        self.TFN = eval(IR)
+        self.RM = eval(RM)
+        self._TFN = IR + RM
     
-        InputData = [self._time_model, self.precipitation, self.evaporation, solver]
+        InputData = [self._time_model, self.precipitation, self.evaporation, solver, IR, RM, trend]
         
         if method == 'leastsq':
-            X0.add('d', value=np.mean(self.head_observed), vary=True) 
+            X0.add('d', value=np.mean(self.head_observed), vary=True)
+            if trend=='reclamation': X0.add('t_start', value=(md.datestr2num('01-01-1975')-md.date2num(self._time_climate[0])), vary=False)
             self.result = minimize(self.objective_function, X0, args=(InputData,), method='leastsq')
             self.parameters_optimized = self.result.params.valuesdict()
             if self.result.success: 
@@ -194,10 +197,12 @@ class TimeSeries:
       
     def objective_function(self, parameters, InputData):
         alpha = 10.0**parameters['alpha'].value
-        self.head_modeled, recharge = self.TFN(parameters, InputData)
-        self.recharge = Series(recharge, index=self._time_climate)
+        output = construct_model(parameters, InputData)
+        self.head_modeled = output[1][self._time_spinup:self._time_model[-1]+1] #Select entire period        
+        self.recharge = Series(output[2], index=self._time_climate)
         self.recharge = self.recharge[self.recharge.index > md.num2date(self._time_begin)]
-        self.head_modeled = self.head_modeled[self._time_spinup:self._time_model[-1]+1] #Select entire period
+        if output[0]==1:
+            self.trend = output[3][self._time_spinup:self._time_model[-1]+1]
         self.residuals = self.head_observed - self.head_modeled[self._index_observed] 
         self.innovations = self.residuals[1:] - (self.residuals[0:-1] * np.exp(-self._time_steps/alpha))
         
@@ -263,16 +268,19 @@ class TimeSeries:
         plt.plot(md.num2date(self._time_axis), self.head_observed, 'k.', label='observed head')
         plt.plot(md.num2date(np.arange(self._time_begin, self._time_end+1)), 
                  self.head_modeled, '-', label='modeled head')
+        try:
+            plt.plot(md.num2date(np.arange(self._time_begin, self._time_end+1)),self.trend+np.mean(self.head_observed))  
+        except:
+            pass
         std = np.std(self.residuals)
         plt.fill_between(md.num2date(np.arange(self._time_begin, self._time_end+1)),self.head_modeled-2*std, self.head_modeled+2*std, color='gray', alpha=0.3, label='95% confidence interval')
         ax2.xaxis.set_visible(False)         
         plt.legend(loc=(0,1), ncol=3, frameon=False, handlelength=3)
         plt.ylabel('Head [m]')
-        #plt.ylim(min(self.head_observed), max(self.head_observed))
+        plt.ylim(min(self.head_modeled-2.2*std), max(self.head_modeled+2.2*std))
         plt.axvline(self._date_calibration, color='k', linestyle='--')
         ymin, ymax = plt.ylim()
         plt.text(self._date_calibration,ymin+0.1, 'validation', verticalalignment = 'bottom')
-        
               
         # Plot the residuals and innovations  
         ax3 = plt.subplot(gs[2,:-1], sharex=ax2)      
@@ -284,11 +292,11 @@ class TimeSeries:
         
         # Plot the Impulse Response Function
         ax4 = plt.subplot(gs[0,-1])    
-        IRF = getattr(TFN_Model, 'IRF')
-        Fb = IRF(self.result.params)
+        Fb = self.TFN(self.result.params)
         plt.plot(Fb)
         plt.xticks(range(0,10000,500))
         plt.xlim(0,np.where(np.cumsum(Fb)>0.99*sum(Fb))[0][0]) # cut off plot after 99.0% of the response
+        plt.ylim(0.0)
         plt.text(5,0.0,'Peak Time: %i' %Fb.argmax(), verticalalignment='bottom')
         plt.title('Impulse Response')
         
@@ -318,15 +326,24 @@ class TimeSeries:
     def plot_diagnostics(self, savefig=True):
         plt.figure('Diagnostics %s_%s' %(self.bore,self._TFN))
         plt.suptitle('GWTSA %s Model Diagnostics for bore %s' %(self._TFN, self.bore), fontweight='bold')
-        gs = plt.GridSpec(4,4, wspace=0.4, hspace=0.4)
+        gs = plt.GridSpec(4,4, wspace=0.4, hspace=0.6)
         
         # Plot the parameter evolutions
         ax1 = plt.subplot(gs[0:2,0:2])
-        #plt.plot(self.parameters)
-        plt.title('parameters evolution')
-        plt.ylabel('parameter value')
-        plt.xlabel('iteration')
-        plt.legend(self.result.var_names)
+        Hm = self.head_modeled[self._index_observed]
+        Hm = np.sort(Hm)
+        FOE = (1-np.arange(0.0,len(Hm),1) / len(Hm))*100
+        plt.plot(FOE, Hm, 'x', color='k')
+
+        Ho = self.head_observed
+        Ho = np.sort(Ho)
+        FOE = (1-np.arange(0.0,len(Ho),1) / len(Ho))*100
+        plt.plot(FOE, Ho, 'k-')
+
+        plt.title('Frequency of Exceedence graph')
+        plt.ylabel('Head [m]')
+        plt.xlabel('frequency of exceedence ($\%$)')
+        plt.legend(['Modeled', 'Observed'])
         
         try:
             self.result.covar
@@ -340,12 +357,12 @@ class TimeSeries:
             for (i, j), z in np.ndenumerate(self.result.covar):
                 plt.text(j+0.5, i+0.5, '{:0.2f}'.format(z), ha='center', va='center', color='darkslategrey')             
         except:
-            pass
+            pass #This should give some message that the covariance matrix is unavailable
         
         ax3 = plt.subplot(gs[2:4,0:2])        
-        x = acf(self.innovations, nlags=3650)
+        x = acf(self.innovations, nlags=730)
         plt.title('Autocorrelation graph of the innovations')
-        plt.plot(x)
+        plt.stem(x, color='k', markerfmt=' ' )
         plt.xlabel('Time [Days]')        
         
         ax4 = plt.subplot(gs[2:4,2:4])  
@@ -371,7 +388,29 @@ class TimeSeries:
         plt.xlabel('Time [Years]',size=20)
         plt.legend('Precipitation','Potential Evapotranspiration')
         plt.title('Forcings',size=20)
-#%% Estiamte Sumax
+
+#%% Plot the recharge
+    def plot_recharge(self, n=1000):
+        keys = self.result.var_names
+        par = [self.result.params.valuesdict()[x] for x in keys]
+        par = np.random.multivariate_normal(par, self.result.covar, 1000)
+        InputData = [self._time_model, self.precipitation, self.evaporation, 1]
+        df = DataFrame(index=self._time_climate)
+        for i in range(n):
+            parameters = Parameters()
+            parameters.add('Srmax', 0.27)
+            parameters.add('Imax',1.5e-3)
+            for j in range(len(keys)): parameters.add(keys[j],par[i,j])
+            df['r%s'%i] = self.RM(parameters, InputData)
+        df = df[df.index > md.num2date(self._time_begin)]
+        df = df.resample('A', how='sum')
+        df = df[(df>0.0) & (df<2.0)]
+        self.recharge_std = df.std(1)
+        self.recharge_mean = df.mean(1)
+        plt.figure()
+        plt.bar(self.recharge_mean.index, self.recharge_mean, yerr=2*self.recharge_std, lw=1, color=[120/255.,196./255,1.], width = 250, error_kw={'ecolor': 'k', 'ewidth': '5'})
+
+#%% Estimate Sumax     
     def calcSumax(self, Cr=0.40, imax=0.001, T=20, EaMethod='gradual'):
         from scipy.stats import gumbel_r
         # Interception Reservoir
@@ -408,8 +447,8 @@ class TimeSeries:
         for t in range(n-1):
             soildeficit[t+1] = np.min(((soildeficit[t] + Pe[t] - Ea[t]), 0.0))     
         
-        soildeficit = Series(soildeficit, index=self._time_climate)
-        Sumax = np.sqrt(soildeficit.resample('A', how='min') ** 2. ) # Work with positive values
+        self.soildeficit = Series(soildeficit, index=self._time_climate)
+        Sumax = np.sqrt(self.soildeficit.resample('A', how='min') ** 2. ) # Work with positive values
     
         Sumax.sort()
         mu, sigma = gumbel_r.fit(Sumax)
@@ -459,6 +498,6 @@ def interface_plot():
               #'text.dvipnghack' : True,
               'figure.figsize': [16.29,10],
               'figure.dpi': 300,
-              'figure.facecolor' : white
+              'figure.facecolor' : 'white'
     }
     return plt.rcParams.update(params)

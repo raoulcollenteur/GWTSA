@@ -14,13 +14,13 @@ dS/ Dt = Pe[t] * (1 - (Sr[t] / Srmax)**Beta)- Epu * min(1, Sr/0.5Srmax)
 dS/ Dt = Pe[t] * (1 - (Sr[t] / Srmax)**Beta) - Kp * (Sr/Srmax)**Gamma - Epu * min(1, Sr/0.5*Srmax)
 
 -------------------------------------Numerical info:
-The Soil module is solved with an implicit euler and Newton Raphson iteration. The initial guesstimate for the the NR-iteration is provided by an Explicit Euler solution of the above differential equation. 
+The Soil module is solved with an implicit euler and Newton Raphson iteration. The initial estimate for the the NR-iteration is provided by an Explicit Euler solution of the above differential equation. 
 
 -------------------------------------To Do:
     - Built in more external / internal checks for water balance
 
 -------------------------------------References:     
-- Kavetski, D., Kuczera, G. & Franks, S.W. [2006]. Calibration of concEputuyal hydrological models revisited: 1. Overcoming numerical artefacts. Journal of Hydrology, 320, p. 173-186.  
+- Kavetski, D., Kuczera, G. & Franks, S.W. [2006]. Calibration of conceptual hydrological models revisited: 1. Overcoming numerical artefacts. Journal of Hydrology, 320, p. 173-186.  
 
 @author: Raoul Collenteur"""
 
@@ -319,7 +319,8 @@ def comb(np.ndarray[np.int_t] Time_Model, np.ndarray[np.float_t, ndim=1] P, np.n
             assert ~np.isnan(S[t+1]), 'NaN-value calculated for soil state'       
         
         S[t+1] = c_min(Srmax, c_max(0.0,S[t+1])) #Make sure the solution is larger then 0.0 and smaller than Srmax
-        
-    cdef np.ndarray[np.float_t] R = np.append(0.0, dt * 0.5 * (Pe[1:] * ((S[:-1]**Beta + S[1:] ** Beta) / (Srmax **Beta)) + Kp * ((S[:-1]**Gamma + S[1:] ** Gamma) / (Srmax **Gamma))))  
     
-    return R, S
+    cdef np.ndarray[np.float_t] Rs = np.append(0.0, Kp * dt * 0.5 * ((S[:-1]**Gamma + S[1:] ** Gamma) / (Srmax **Gamma))) # Percolation
+    cdef np.ndarray[np.float_t] Rf = np.append(0.0, Pe[1:] * dt * 0.5 * ((S[:-1]**Beta + S[1:] ** Beta) / (Srmax **Beta))) # Preferential
+    
+    return Rs, Rf, S
