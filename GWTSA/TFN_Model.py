@@ -31,9 +31,42 @@ def construct_model(parameters, InputData):
     else:
         return [0, head_modeled, recharge, trend]
 
+#%% Alternative model
+
+def combi_model(parameters, InputData):
+    d = parameters['d'].value    
+    time_model = InputData[0]
+    
+    RechargeModel = eval(InputData[5])
+    trend = InputData[6]
+    
+    Fb1 = IRF(parameters) #block reponse function
+    Fb2 = IRF3(parameters) #block reponse function    
+    Rs, Rf = RechargeModel(parameters, InputData)[1:3] #Simulate the recharge series
+    recharge = Rs + Rf
+    head_modeled = (d + fftconvolve(Rs,Fb1))[time_model]
+    head_modeled += (d + fftconvolve(Rf,Fb2))[time_model]
+    
+    if trend != None:    
+        trend = eval(trend)(parameters, InputData)
+        head_modeled += trend
+        return [1, head_modeled, recharge, trend]
+    else:
+        return [0, head_modeled, recharge, trend]
+
+
 #%% Define the different impulse Response Function
    
 def IRF(parameters):
+    # Unpack all the parameters that should be calibrated
+    A = 10** parameters['A'].value
+    a = 10.0** parameters['a'].value
+    n = parameters['n'].value
+    t = np.arange(1.,10000)
+    Fs = A * t**n * (t/a)**-n * gammainc(n, t/a) # Step response function based on pearsonIII
+    return np.append(0, Fs[1:] - Fs[0:-1]) #block reponse function    
+
+def IRF1(parameters):
     # Unpack all the parameters that should be calibrated
     A = parameters['A'].value
     n = parameters['n'].value
@@ -41,15 +74,6 @@ def IRF(parameters):
     t = np.arange(1.,10000)
     Fs = A * t**n * (t*(n-1)/t_p)**-n * gammainc(n, (t*(n-1)/t_p)) 
     return np.append(0, Fs[1:] - Fs[0:-1]) #block reponse function    
-
-def IRF1(parameters):
-    # Unpack all the parameters that should be calibrated
-    A = 10.0** parameters['A'].value
-    a = 10.0** parameters['a'].value
-    n = parameters['n'].value
-    time_model = np.arange(0,10000)
-    Fs = A * (a**n) * gammainc(n, time_model/a) # Step response function based on pearsonIII
-    return Fs[1:] - Fs[0:-1] #block reponse function
 
 def IRF2(parameters, recharge):    
     mu = parameters['mu'].value
@@ -60,6 +84,14 @@ def IRF2(parameters, recharge):
     Fb = Fs[1:] - Fs[0:-1] #block reponse function
     return fftconvolve(recharge,Fb)[0:len(recharge)]
     
+def IRF3(parameters):
+    # Unpack all the parameters that should be calibrated
+    A = parameters['A1'].value
+    n = parameters['n1'].value
+    t_p = 10**parameters['t_p1'].value
+    t = np.arange(1.,10000)
+    Fs = A * t**n * (t*(n-1)/t_p)**-n * gammainc(n, (t*(n-1)/t_p)) 
+    return np.append(0, Fs[1:] - Fs[0:-1]) #block reponse function       
 #%% Define the different recharge models
 
 def linear(parameters, InputData):
@@ -117,9 +149,9 @@ def combination(parameters, InputData):
     solver = InputData[3]    
     dt= 1 
     #Recharge model
-    Rs, Rf= comb(time_model, P, E, Srmax, Kp, Beta, Gamma, Imax , dt, solver)[0:1]  
+    Rs, Rf = comb(time_model, P, E, Srmax, Kp, Beta, Gamma, Imax , dt, solver)[0:2]
     recharge = Rs + Rf
-    return recharge      
+    return recharge     
     
 #%% Define Alternative model additions (E.g. Wells, linear slope, reclamation)    
     
@@ -129,6 +161,7 @@ def linear_slope(parameters, InputData):
     time_model = InputData[0]    
     head_modeled = slope * time_model + intercept
     head_modeled[head_modeled<0.0] = 0.0
+    head_modeled[-10*365:] = head_modeled[-10*365] # Alternatively, let the rise last for a couple of years
     return head_modeled
           
     
