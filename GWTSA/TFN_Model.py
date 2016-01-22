@@ -20,10 +20,13 @@ def construct_model(parameters, InputData):
     RechargeModel = eval(InputData[5])
     trend = InputData[6]
     
-    Fb = ImpulseResponse(parameters) #block reponse function
-    recharge = RechargeModel(parameters, InputData) #Simulate the recharge series
+    recharge = RechargeModel(parameters, InputData) #Simulate the recharge series    
     
+    #recharge = IRF2(parameters, recharge) # Used when percolation is transformed!
+    
+    Fb = ImpulseResponse(parameters) #block reponse function
     head_modeled = (d + fftconvolve(recharge,Fb))[time_model] 
+    
     if trend != None:    
         trend = eval(trend)(parameters, InputData)
         head_modeled += trend
@@ -59,14 +62,15 @@ def combi_model(parameters, InputData):
    
 def IRF(parameters):
     # Unpack all the parameters that should be calibrated
-    A = 10** parameters['A'].value
-    a = 10.0** parameters['a'].value
+    A = parameters['A'].value
+    a = parameters['a'].value
     n = parameters['n'].value
     t = np.arange(1.,10000)
     Fs = A * t**n * (t/a)**-n * gammainc(n, t/a) # Step response function based on pearsonIII
     return np.append(0, Fs[1:] - Fs[0:-1]) #block reponse function    
 
 def IRF1(parameters):
+    """The IRF1 function is a modified version of the general IRF, where the T_peak is given as an parameter instead of 'a'. """
     # Unpack all the parameters that should be calibrated
     A = parameters['A'].value
     n = parameters['n'].value
@@ -75,7 +79,8 @@ def IRF1(parameters):
     Fs = A * t**n * (t*(n-1)/t_p)**-n * gammainc(n, (t*(n-1)/t_p)) 
     return np.append(0, Fs[1:] - Fs[0:-1]) #block reponse function    
 
-def IRF2(parameters, recharge):    
+def IRF2(parameters, recharge):
+    """The IRF2 function can be used to simulate the effect of the percolation zone. Followed by an exponential decay function. """    
     mu = parameters['mu'].value
     sig = parameters['sig'].value
     
@@ -86,12 +91,12 @@ def IRF2(parameters, recharge):
     
 def IRF3(parameters):
     # Unpack all the parameters that should be calibrated
-    A = parameters['A1'].value
-    n = parameters['n1'].value
-    t_p = 10**parameters['t_p1'].value
+    A1 = parameters['A1'].value
+    a1 = parameters['a1'].value
+    n1 = parameters['n1'].value
     t = np.arange(1.,10000)
-    Fs = A * t**n * (t*(n-1)/t_p)**-n * gammainc(n, (t*(n-1)/t_p)) 
-    return np.append(0, Fs[1:] - Fs[0:-1]) #block reponse function       
+    Fs = A1 * t**n1 * (t/a1)**-n1 * gammainc(n1, t/a1) # Step response function based on pearsonIII
+    return np.append(0, Fs[1:] - Fs[0:-1]) #block reponse function         
 #%% Define the different recharge models
 
 def linear(parameters, InputData):
@@ -122,7 +127,7 @@ def preferential(parameters, InputData):
 def percolation(parameters, InputData):
     # Unpack all the parameters that should be calibrated    
     Srmax = parameters['Srmax'].value
-    Kp = 10.0**parameters['Kp'].value
+    Kp = parameters['Kp'].value
     Gamma = parameters['gamma'].value         
     Imax = parameters['Imax'].value
     # unpack all the data that is needed for the simulation
@@ -138,7 +143,7 @@ def percolation(parameters, InputData):
 def combination(parameters, InputData):
     # Unpack all the parameters that should be calibrated    
     Srmax = parameters['Srmax'].value
-    Kp = 10.0**parameters['Kp'].value
+    Kp = parameters['Kp'].value
     Beta = parameters['Beta'].value
     Gamma = parameters['gamma'].value       
     Imax = parameters['Imax'].value
@@ -151,7 +156,7 @@ def combination(parameters, InputData):
     #Recharge model
     Rs, Rf = comb(time_model, P, E, Srmax, Kp, Beta, Gamma, Imax , dt, solver)[0:2]
     recharge = Rs + Rf
-    return recharge     
+    return recharge, Rs, Rf     
     
 #%% Define Alternative model additions (E.g. Wells, linear slope, reclamation)    
     

@@ -1,0 +1,43 @@
+[[Fit Statistics]]
+    # function evals   = 13728
+    # data points      = 459
+    # variables        = 10
+    chi-square         = 0.028
+    reduced chi-square = 0.000
+[[Variables]]
+    A:       0.30598391 +/- 0.162297 (53.04%) (init= 3)
+    a:       17820.4744 +/- 1.95e+04 (109.58%) (init= 200)
+    n:       1 (fixed)
+    A1:      0.61689718 +/- 1.67e+04 (2710759.20%) (init= 3)
+    a1:      8609.16985 +/- 1.34e+08 (1555502.16%) (init= 200)
+    n1:      0.33200036 +/- 5.47e+03 (1646142.36%) (init= 1)
+    alpha:   125.511458 +/- 7.178743 (5.72%) (init= 100)
+    Srmax:   0.305 (fixed)
+    Imax:    0.0015 (fixed)
+    Kp:      0.00793260 +/- 0.013318 (167.90%) (init= 0.005)
+    Beta:    5.83293988 +/- 375.7853 (6442.47%) (init= 2)
+    gamma:   0.48637287 +/- 0.886652 (182.30%) (init= 3)
+    d:       11.8807576 +/- 0.500260 (4.21%) (init= 28.12071)
+[[Correlations]] (unreported correlations are <  0.100)
+    C(A, a)                      = -0.969 
+    C(Kp, gamma)                 =  0.938 
+    C(A, d)                      = -0.919 
+    C(a, d)                      =  0.890 
+    C(alpha, Beta)               =  0.734 
+    C(A1, n1)                    = -0.638 
+    C(A1, a1)                    = -0.342 
+    C(Beta, gamma)               = -0.321 
+    C(Kp, Beta)                  = -0.305 
+    C(a, alpha)                  =  0.300 
+    C(Kp, d)                     =  0.272 
+    C(A, alpha)                  = -0.215 
+    C(Beta, d)                   = -0.213 
+    C(n1, Kp)                    = -0.206 
+    C(gamma, d)                  =  0.199 
+    C(a1, Kp)                    =  0.194 
+    C(n1, gamma)                 = -0.189 
+    C(a, Beta)                   =  0.185 
+    C(a1, gamma)                 =  0.170 
+    C(a, Kp)                     =  0.157 
+    C(a1, n1)                    = -0.135 
+    C(A, Beta)                   = -0.115 tr

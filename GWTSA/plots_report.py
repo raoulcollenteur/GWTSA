@@ -101,13 +101,15 @@ plt.legend(['Recharge', 'UZ'])
 
 #%% Plot the precipitation and evapotranspiration
 
-data = read_csv('Test_Data/KNMI_Deelen.txt', skipinitialspace=True, skiprows=11, delimiter=',', parse_dates=['YYYYMMDD'], index_col=['YYYYMMDD'])
+data = read_csv('Test_Data/KNMI_Bilt.txt', skipinitialspace=True, skiprows=11, delimiter=',', parse_dates=['YYYYMMDD'], index_col=['YYYYMMDD'])
 
 data.RH = data.RH/10.
 data.EV24 = data.EV24/10.
 
 P_avg = data.RH.resample('A', how='sum', kind='YYYYMMDD')
+P_avg = P_avg[(P_avg.index>1958) & (P_avg.index<2015)]
 E_avg = data.EV24.resample('A', how='sum', kind='YYYYMMDD')
+E_avg = E_avg[(E_avg.index>1958) & (E_avg.index<2015)]
 R_avg = P_avg - E_avg
 
 P_mean = P_avg.mean()
@@ -117,14 +119,16 @@ R_mean = R_avg.mean()
 plt.figure(figsize=(8.3,3))
 
 plt.subplot(211)
-P_avg[P_avg.index>1986].plot(kind='bar', color=cyan, label='Precipitation')
+ax = P_avg.plot(kind='bar', color=cyan, label='Precipitation')
 plt.ylabel(r'$P$ [mm/year]')
 plt.legend(loc=4)
+ax.grid(False)
 
 plt.subplot(212)
-E_avg[E_avg.index>1986].plot(kind='bar', color='lightcoral', label='Evapotranspiration')
+ax1 = E_avg.plot(kind='bar', color='lightcoral', label='Evapotranspiration')
 plt.ylabel(r'$E_p$ [mm/year]')
 plt.xlabel('Time [years]')
+ax1.grid(False)
 plt.legend(loc=4)
 plt.savefig('Figures/climate_deelen.eps', bbox_inches='tight')
 

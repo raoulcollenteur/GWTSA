@@ -45,9 +45,9 @@ class Model:
         colors=plt.cm.nipy_spectral(np.linspace(0,1,self.bores_number))
         if self.bores_number>1: colors[1] = [0.47058823529411764, 0.7686274509803922, 1.0, 1.0] #Add cyan TUDelft color
         for i in range(self.bores_number):
-            plt.plot(md.num2date(self.bores_list[i]._time_axis), self.bores_list[i].head_observed,'.', c=colors[i])
+            plt.plot(md.num2date(self.bores_list[i]._time_axis), self.bores_list[i].head_observed,'.', markersize=2, c=colors[i], label='%s observed' %self.bores_list[i].bore)
             if modeled == 1:            
-                plt.plot(md.num2date(np.arange(self.bores_list[i]._time_begin, self.bores_list[i]._time_end+1)), self.bores_list[i].head_modeled, c=colors[i], label='%s, %s' %(self.bores_list[i].bore, self.bores_list[i]._TFN), linestyle='-') 
+                plt.plot(md.num2date(np.arange(self.bores_list[i]._time_begin, self.bores_list[i]._time_end+1)), self.bores_list[i].head_modeled, c=colors[i], label='%s, %s' %(self.bores_list[i].bore, self.bores_list[i]._RM), linestyle='-') 
         plt.ylabel('Groundwater head [m]')
         plt.xlabel('Time [Years]')
         plt.legend(loc=(0,1), ncol=3, frameon=False, handlelength=3)
@@ -59,7 +59,7 @@ class Model:
 #%% Time series class    
             
 class TimeSeries:
-    def __init__(self, bore, forcing, calibration, validation, rows=[50, 8], cl_unit=10000.0, gw_unit=100.0, Cf=0.65 ):
+    def __init__(self, bore, forcing, calibration, validation, rows=[50, 8], cl_unit=10000.0, gw_unit=100.0, Cf=1.0 ):
         
         """
         Prepares the time series model with the forcings and observed heads
@@ -169,7 +169,7 @@ class TimeSeries:
         if method == 'leastsq':
             X0.add('d', value=np.mean(self.head_observed), vary=True)
             if trend=='reclamation': X0.add('t_start', value=(md.datestr2num('01-01-1975')-md.date2num(self._time_climate[0])), vary=False)
-            self.result = minimize(self.objective_function, X0, args=(InputData,), method='leastsq')
+            self.result = minimize(self.objective_function, X0, args=(InputData,), method='leastsq', scale_covar=True)
             self.parameters_optimized = self.result.params.valuesdict()
             if self.result.success: 
                 print 'Optimization completed succesfully!'
@@ -199,7 +199,7 @@ class TimeSeries:
 #%% swsi constitutes the adapted version of the Sum of weighted squared innovations (swsi) developed by asmuth et al. (2005). For large values of alpha and small timesteps the numerator approaches zero. Therefore, Peterson et al. (2014) adapted the swsi function, making the numerator a natural log and changing the product operator to a summation.
       
     def objective_function(self, parameters, InputData):
-        alpha = 10.0**parameters['alpha'].value
+        alpha = parameters['alpha'].value
         output = construct_model(parameters, InputData)
         #output = combi_model(parameters, InputData)        
         self.head_modeled = output[1][self._time_spinup:self._time_model[-1]+1] #Select entire period        
@@ -221,7 +221,7 @@ class TimeSeries:
         return innovations      
 
     def swsi(self, period):
-        alpha = 10.0**self.parameters_optimized['alpha']
+        alpha = self.parameters_optimized['alpha']
         # Select the period to calculate statistics
         innovations = self.innovations[period]
         dt = self._time_steps[period]    
@@ -403,23 +403,19 @@ class TimeSeries:
         InputData = [self._time_model, self.precipitation, self.evaporation, 1]
         df = DataFrame(index=self._time_climate)
         for i in range(n):
-            parameters = Parameters()
-            parameters.add('Srmax', 0.27)
-            parameters.add('Imax',1.5e-3)
-            for j in range(len(keys)): parameters.add(keys[j],par[i,j])
+            parameters = self.result.params
+            for j in range(len(keys)): parameters['%s' %keys[j]].value = par[i,j]
             df['r%s'%i] = self.RM(parameters, InputData)
         df = df[df.index > md.num2date(self._time_begin)]
         df = df.resample('A', how='sum')
-        df = df[(df>0.0) & (df<2.0)]
-        self.recharge_std = df.std(1)
-        self.recharge_mean = df.mean(1)
-        
+        self.df = df
+        df = df[(df>-5.0) & (df<5.0)]
+#        self.recharge_std = df.std(1)
+#        self.recharge_mean = df.mean(1)
+         
         if fig==1:
-            plt.figure()
-            plt.bar(self.recharge_mean.index, self.recharge_mean, yerr=2*self.recharge_std, lw=1, color=[120/255.,196./255,1.], width = 250, error_kw={'ecolor': 'k', 'ewidth': '5'})
-            plt.xlabel('Time [years]')
-            plt.ylabel('Recharge [m]')
-            plt.ylim(0.0, 0.8)
+            return plt.boxplot(df.T.values, boxprops={'color':'k'}, bootstrap=1000)
+            #return plt.bar(self.recharge_mean.index, self.recharge_mean, yerr=2*self.recharge_std, color=[120/255.,196./255,1.], width = -250, lw=0, error_kw={'ecolor': 'dimgray', 'ewidth': '5'})
 
 #%% Estimate Sumax     
     def calcSumax(self, Cr=0.40, imax=0.001, T=20, fc=1.0, EaMethod='gradual'):
