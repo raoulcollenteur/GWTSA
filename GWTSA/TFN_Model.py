@@ -8,8 +8,10 @@ Created on Tue Nov 18 14:34:13 2014
 import numpy as np
 from scipy.special import gammainc
 from scipy.stats import norm
-from Unsat_Zone import perc, pref, comb
+from scipy.integrate import quad
 from scipy.signal import fftconvolve
+from Unsat_Zone import perc, pref, comb
+
 
 #%% Define the basic model that construct the model from different options in Impulse response and recharge simulation models. 
 def construct_model(parameters, InputData):
@@ -156,7 +158,7 @@ def combination(parameters, InputData):
     #Recharge model
     Rs, Rf = comb(time_model, P, E, Srmax, Kp, Beta, Gamma, Imax , dt, solver)[0:2]
     recharge = Rs + Rf
-    return recharge, Rs, Rf     
+    return recharge     
     
 #%% Define Alternative model additions (E.g. Wells, linear slope, reclamation)    
     
@@ -165,8 +167,8 @@ def linear_slope(parameters, InputData):
     intercept = parameters['intercept'].value
     time_model = InputData[0]    
     head_modeled = slope * time_model + intercept
-    head_modeled[head_modeled<0.0] = 0.0
-    head_modeled[-10*365:] = head_modeled[-10*365] # Alternatively, let the rise last for a couple of years
+    head_modeled[head_modeled>0.0] = 0.0
+    head_modeled[-25*365:] = head_modeled[-15*365] # Alternatively, let the rise last for a couple of years
     return head_modeled
           
     
@@ -178,4 +180,16 @@ def reclamation(parameters, InputData):
     Fb = B*(1.-np.exp(-(time_model-t_start)/b))
     Fb[Fb>0.0]=0.0
     return Fb    
+        
+def well(parameters, InputData):
+    B = parameters['B'].value
+    b = parameters['b'].value
+    time_model = InputData[0]
+    Discharge = InputData[7]
+    Fi = Fi = B/time_model[1:] * np.exp(-b/time_model[1:])
+    Fs = np.cumsum(Fi)
+    Fb = np.append(0, Fs[1:] - Fs[0:-1])
+    drawdown = fftconvolve(Discharge, Fb)[time_model] 
+    return drawdown
+    
         

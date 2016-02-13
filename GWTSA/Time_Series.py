@@ -6,7 +6,7 @@ Created on Thu Aug 27 10:45:17 2015
 
 Notes To self:
 --------------------------------
-- Eventually, the package has to deal with multiple model part, wells, transfer functions, error models. This can easily (?) be implemented by using the "Model" approach of lmfit.
+
 
 """
 import numpy as np
@@ -15,32 +15,101 @@ import matplotlib.pyplot as plt
 from TFN_Model import *
 from statsmodels.tsa.stattools import acf
 from lmfit import minimize, Parameters, Parameter, report_fit, fit_report
-from pandas import Series, DataFrame
+from pandas import Series, DataFrame, read_csv
 
 cyan = [120/255.,196./255,1.]
 #%% Model Class
 
-class Model:
-    def __init__(self, bores, forcing, calibration, validation):
+class Model:    
+    """ The Model class creates instances for all observations well.
+    Parameters
+    ----------
+    bores, forcing: string
+        The filename and path provided as a string
+    calibration, validation: list of strings
+        list that contains the start and end date 
+        e.g. ['01-01-1974', '31-12-1994']
+    discharge: string, optional
+        keyword-argument, possibility to add discharge from a well
+    Cf: list, optional
+        Cropfactor, list of one or two values. With two values a linearly 
+        changing cropfactor is applied over the entire period.
+    
+    Returns
+    -------
+    Object M that contains a list (M.bores_list) with an instance for each 
+    borehole entered.
+    
+    Example
+    -------
+    M = Model('bores.csv', 'forcing.csv', ['01-01-1974', '31-12-1994'], 
+               ['01-01-1974', '31-12-2003'], Discharge.csv', [1.2,1.0])
+    
+    See Also
+    --------
+    See the documentation of GWTSA for a description and examples of how the 
+    input files for the observed heads and the forcings should look.
+    """
+    
+    def __init__(self, bores, forcing, calibration, validation, discharge=None, 
+                 Cf=[1.0]):
         self.bores_list = []            # Create an empty list for all the bores instances
         self.bores_number = len(bores)  # Determine how many boreholes are entered
         
         for i in range(self.bores_number):
-            self.bores_list.append(TimeSeries(bores[i], forcing, calibration, validation))
+            self.bores_list.append(TimeSeries(bores[i], forcing, calibration, 
+                                   validation, discharge, Cf=Cf))
             
-    def add_bore(self, bores, forcing, calibration, validation):
-        self.bores_list.append(TimeSeries(bores, forcing, calibration, validation))
+    def add_bore(self, bores, forcing, calibration, validation, discharge=None, 
+                 Cf=[1.0]):
+        """ Add a single borehole to the bores_list. Input is similar to that 
+        of the Model class.
+        """
+        self.bores_list.append(TimeSeries(bores, forcing, calibration, 
+                               validation, discharge, Cf))
         self.bores_number += 1          # Increase number of boreholes
         
     def delete_bore(self, boreid):      #Not functional yet!!!
         self.bores_list.pop(boreid)
         self.bores_number -= 1
     
-    def solve(self, X0, IR='IRF', RM='linear', trend=None, method='leastsq', solver=1):       
+    def solve(self, X0, IR='IRF', RM='linear', trend=None, method='leastsq', 
+              solver=1):
+        """ The solve function fits a model on each of the boreholes in the 
+        bores_list.
+        Parameters
+        ----------
+        X0: Parameters object
+            Parameters object from the LMFIT package. See help(Parameters) 
+            and the GWTSA manual on how to construct this input
+        IR: string, optional
+            The Impulse Response (IR) function to apply. e.g. 'IRF'.
+        RM: list, optional
+            list of strings with the Recharge Model (RM) to use.
+        trend: string, optional
+            string-name of the trend to use. options are: 'reclamation', 
+            'linear_slope', 'well' or a another self-defined function.
+        method: string, optional
+            optimization method used by LMFIT. standard is 'leastsq'.
+        solver: int 0 or 1
+            choose how to solve the recharge model. 0 for explicit Euler and
+            1 for implicit Euler.
+        
+        Returns
+        -------
+        An optimized model that is stored in the instance object for each 
+        borehole.
+
+        """
         for i in range(self.bores_number):
-            self.bores_list[i].solve(X0, IR, RM, trend, method, solver)
+            self.bores_list[i].solve(X0, IR, RM[i], trend, method, solver)
     
     def plot(self, modeled=1, savefig=False):
+        """ Plot the observed and modelled groundwater levels of all boreholes 
+        in the bores_list. keyword-argument: 'modeled', True or False to plot
+        the modelled gwl's. Can also be used when no model is fitted. 'savefig'
+        is used to save the figure or not.
+        """
         fig2 = plt.figure('Boreholes')
         colors=plt.cm.nipy_spectral(np.linspace(0,1,self.bores_number))
         if self.bores_number>1: colors[1] = [0.47058823529411764, 0.7686274509803922, 1.0, 1.0] #Add cyan TUDelft color
@@ -54,39 +123,40 @@ class Model:
         plt.axvline(self.bores_list[0]._date_calibration, color='k', linestyle='--')
 
         if savefig:
-            fig2.savefig('Figures/boreholes.eps', format='eps', bbox_inches='tight')       
+            fig2.savefig('Figures/boreholes.eps', bbox_inches='tight')
     
 #%% Time series class    
             
 class TimeSeries:
-    def __init__(self, bore, forcing, calibration, validation, rows=[50, 8], cl_unit=10000.0, gw_unit=100.0, Cf=1.0 ):
-        
-        """
-        Prepares the time series model with the forcings and observed heads
-        
-        parameters
+    def __init__(self, bore, forcing, calibration, validation, Discharge=None, rows=[50, 8], cl_unit=10000.0, gw_unit=100.0, Cf=[1.0]):     
+        """ The Model class creates instances for all observations well.
+        Parameters
         ----------
-        bore: string
-            name of the csv file containing the observed head values. 
-        forcing: string
-            name of the csv file containing the forcing values. 
-        rows: list
-            list with the number of rows to skip when reading the txt files
-            E.g. [5,8] #skip 5 lines in bore and 8 lines in forcing txt file
-        timestart: int
-            warmup time for model in days    
+        bores, forcing: string
+            The filename and path provided as a string
+        calibration, validation: list of strings
+            list that contains the start and end date 
+            e.g. ['01-01-1974', '31-12-1994']
+        discharge: string, optional
+            keyword-argument, possibility to add discharge from a well
+        Cf: list, optional
+            Cropfactor, list of one or two values. With two values a linearly 
+            changing cropfactor is applied over the entire period.
         
         Returns
         -------
-           - Precipitation values (self.P)
-           - Potential Evaporation values (self.E)
-           - Name of borehole (self.bore)
+        Object M that contains a list (M.bores_list) with an instance for each 
+        borehole entered.
+        
+        Example
+        -------
+        M = Model('bores.csv', 'forcing.csv', ['01-01-1974', '31-12-1994'], 
+                   ['01-01-1974', '31-12-2003'], Discharge.csv', [1.2,1.0])
         
         See Also
         --------
         See the documentation of GWTSA for a description and examples of how the 
         input files for the observed heads and the forcings should look.
-    
         """
         
         Ho = np.genfromtxt(('./%s' % (bore)), delimiter=',', skip_header=rows[0], usecols=[2, 5], converters={2: md.strpdate2num('%d-%m-%Y')})
@@ -105,10 +175,11 @@ class TimeSeries:
         
         self.precipitation = ClimateData[:,1] / cl_unit *1.0
         self.precipitation[self.precipitation < 0.0] = 0.0
-        Cf = np.ones(len(ClimateData[:,2]))* Cf
-        #Cf[0:(len(ClimateData[:,2])-10*365)] = np.linspace(1.0,0.65,(len(ClimateData[:,2])-10*365))
-        self.Cf = Cf
-        self.evaporation = Cf * ClimateData[:,2] / cl_unit # 0.65 is the cropfactor
+        if len(Cf)==2:
+            self.Cf = np.linspace(Cf[0],Cf[1], len(ClimateData[:,2]))
+        else:
+            self.Cf = np.ones(len(ClimateData[:,2]))* Cf
+        self.evaporation = self.Cf * ClimateData[:,2] / cl_unit # 0.65 is the cropfactor
         self.evaporation[self.evaporation < 0.0] = 0.0
         
         self._time_climate = md.num2date(ClimateData[:,0]) # Time for climate series in real time [dd-mm-yyyy]
@@ -118,9 +189,17 @@ class TimeSeries:
         self._time_spinup = self._time_begin - ClimateData[0,0]
 
         self._index_observed = np.append(0, [np.cumsum(self._time_steps)-1]).astype(int) # Indexes with observed heads        
-        self._index_calibration = self._index_observed[1:] < (md.datestr2num(calibration[1])-self._time_begin)
-        self._index_validation = self._index_observed[1:] > (md.datestr2num(calibration[1])-self._time_begin)
+        self._index_calibration = self._index_observed < (md.datestr2num(calibration[1])-self._time_begin)
+        self._index_validation = self._index_observed > (md.datestr2num(calibration[1])-self._time_begin)
         self._date_calibration = calibration[1]
+        
+        # Figure out the discharge per day and for the correct period
+        if Discharge != None:         
+            data = read_csv('%s' %Discharge, delimiter=';', index_col=0, parse_dates=True)
+            data = data.resample('1d', fill_method='ffill') # Downsample discharge to daily time step if necessary
+            data = data[(data.index > md.num2date(ClimateData[0,0])) & (data.index < md.num2date(self._time_end))]
+            i = md.date2num(data.index[0])-ClimateData[0,0]
+            self.Discharge = np.append(np.zeros(i), data.values)
         
         # Save a name for the borehole
         self.bore = bore[-17:-8]
@@ -130,54 +209,58 @@ class TimeSeries:
         return 'Time Series Data of Bore: %s' %self.bore
         
     def solve(self, X0, IR='IRF', RM='linear', trend=None, method='leastsq', solver=1):
+        """ The solve function fits a model.
+        Parameters
+        ----------
+        X0: Parameters object
+            Parameters object from the LMFIT package. See help(Parameters) 
+            and the GWTSA manual on how to construct this input
+        IR: string, optional
+            The Impulse Response (IR) function to apply. e.g. 'IRF'.
+        RM: list, optional
+            list of strings with the Recharge Model (RM) to use.
+        trend: string, optional
+            string-name of the trend to use. options are: 'reclamation', 
+            'linear_slope', 'well' or a another self-defined function.
+        method: string, optional
+            optimization method used by LMFIT. standard is 'leastsq'.
+        solver: int 0 or 1
+            choose how to solve the recharge model. 0 for explicit Euler and
+            1 for implicit Euler.
         
-        """ 
-        Solves the time series model
-        
-        parameters
-        ----------     
-        TFN: string 
-            define the name of the Transfer function noise model you want to use (see TFN_Model.py)
-        X0: dictionary with initial parameter guesses
-            E.g. X0 = {'A': 20,'a': 10, 'n': 1.5,'Alpha':40}. The order does not matter as solve() 
-            constructs an array with the initial guesses based on the names.
-        method: integer 0 or 1
-            0 = Levenberg-Marquardt method, 1 =  Nelder-Mead method
-        solver: integer 0 or 1
-            0 = explicit euler, 1 = implicit euler
-            
         Returns
         -------
-            - an array of the optimum parameters set (self.parameters_optimized)
-            - array with modeled heads (self.head_modeled)
-            - array with innivations (self.innovations)
-        
-        See Also
-        --------
-        Help(TFN_Model) can give you information on how the parameter dictionary should look, as
-        that depends on the Transfer Functions Noise Model that is used. 
-        
-        """
+        An optimized model that is stored in the instance object for each 
+        borehole. See plot_result and plot_diagnostics for more info on
+        showing the results.
+        """        
+
         # Define the TFN Model
-        self.TFN = eval(IR)
-        self.RM = eval(RM)
-        self._TFN = IR
-        self._RM = RM
-    
-        InputData = [self._time_model, self.precipitation, self.evaporation, solver, IR, RM, trend]
+        self.TFN = eval(IR)     # Save the impulse response function
+        self.RM = eval(RM)      # Save the recharge calculation function
+        self._TFN = IR          # Save the name of the impulse response function
+        self._RM = RM           # Save the name of the recharge model
+
+        InputData = [self._time_model, self.precipitation, self.evaporation,
+                     solver, IR, RM, trend]
+        
+        if trend == 'well':
+            
+            InputData.append(self.Discharge)
         
         if method == 'leastsq':
             X0.add('d', value=np.mean(self.head_observed), vary=True)
-            if trend=='reclamation': X0.add('t_start', value=(md.datestr2num('01-01-1975')-md.date2num(self._time_climate[0])), vary=False)
+            if trend=='reclamation': X0.add('t_start', value=(md.datestr2num('01-01-1975') - md.date2num(self._time_climate[0])), vary=False)
             self.result = minimize(self.objective_function, X0, args=(InputData,), method='leastsq', scale_covar=True)
             self.parameters_optimized = self.result.params.valuesdict()
             if self.result.success: 
                 print 'Optimization completed succesfully!'
                 print(report_fit(self.result))
-                np.savetxt('Figures/fit_report_%s_%s.txt' %(self.bore, self._TFN),(fit_report(self.result),), fmt='%str')
+                np.savetxt('Figures/fit_report_%s_%s.txt' % (self.bore, self._TFN), (fit_report(self.result),), fmt='%str')
         else:
             X0.add('d', value=np.mean(self.head_observed))
-            self.result = minimize(self.objective_function, X0, args=(InputData,), method=method)
+            self.result = minimize(self.objective_function, X0,
+                                   args=(InputData,), method=method)
             self.parameters_optimized = self.result.params.valuesdict()
          
         # Calculate statistics for both the calibration and validation period 
@@ -211,8 +294,8 @@ class TimeSeries:
         self.innovations = self.residuals[1:] - (self.residuals[0:-1] * np.exp(-self._time_steps/alpha))
         
         # Select the period for which to calibrate
-        innovations = self.innovations[self._index_calibration]
-        dt = self._time_steps[self._index_calibration]    
+        innovations = self.innovations[self._index_calibration[:-1]]
+        dt = self._time_steps[self._index_calibration[:-1]]    
         N = len(innovations) # Number of innovations
         
         # Weighing the innovations for optimization
@@ -223,8 +306,8 @@ class TimeSeries:
     def swsi(self, period):
         alpha = self.parameters_optimized['alpha']
         # Select the period to calculate statistics
-        innovations = self.innovations[period]
-        dt = self._time_steps[period]    
+        innovations = self.innovations[period[:-1]]
+        dt = self._time_steps[period[:-1]]    
         N = len(innovations) # Number of innovations
         
         numerator = np.exp((1.0/N) * sum(np.log(1 - np.exp(-2.0 / alpha * dt))))
@@ -240,20 +323,6 @@ class TimeSeries:
         return (np.var(self.head_observed[period])**2 - np.var(self.residuals[period])**2)/np.var(self.head_observed[period])**2*100. 
              
 #%% In this section the functions are defined that relate to the plotting of different forcings and results. Each function starts with plot_function to be able to quickly find these modules.        
-
-    def plot_heads(self,color='r',observed=0, modeled=0, newfig=0):
-        assert modeled == 0 or observed == 0, 'No heads are chosen to be plotted'
-        if newfig == 0:
-            plt.figure()
-        if observed == 0:
-            plt.plot(md.num2date(self._time_axis), self.head_observed, 'k')
-        if modeled == 0:
-            plt.plot(md.num2date(np.arange(self._time_begin, self._time_end+1)), 
-                 self.head_modeled[self._time_model], '-', color=color)
-        plt.legend(['Observed Head','Modeled Head'], loc=0)
-        plt.xlabel('Time [T]', size=20)
-        plt.ylabel('Groundwater Head [L]', size=20)
-        plt.title('%s' % (self.bore))
         
     def plot_results(self, savefig=True):      
         plt.figure('%s_%s_%s' %(self.bore,self._TFN,self._RM))
@@ -380,20 +449,6 @@ class TimeSeries:
 
         if savefig:
             plt.savefig('Figures/%s_%s_diagnostics.eps' %(self.bore,self._TFN), format='eps', bbox_inches='tight')                
-        
-    def plot_forcings(self):
-        plt.figure()
-        plt.bar(md.num2date( self.ClimateData[:,0]), self.ClimateData[:,1], color='b', lw=0)
-        plt.ylabel('P [m/d]', size=20)
-        plt.ylim(0,max(self.ClimateData[:,1]))        
-        ax1 = plt.gca()
-        ax2 = ax1.twinx() # To create a second axis on the right
-        plt.bar(md.num2date( self.ClimateData[:,0]), self.ClimateData[:,2], color='red', lw=0)
-        ax2.set_ylim((0,400)[::-1])
-        plt.ylabel('E [m/d]',size=20)
-        plt.xlabel('Time [Years]',size=20)
-        plt.legend('Precipitation','Potential Evapotranspiration')
-        plt.title('Forcings',size=20)
 
 #%% Plot the recharge
     def recharge_uncertainty(self, n=1000, fig=1):
@@ -414,8 +469,7 @@ class TimeSeries:
 #        self.recharge_mean = df.mean(1)
          
         if fig==1:
-            return plt.boxplot(df.T.values, boxprops={'color':'k'}, bootstrap=1000)
-            #return plt.bar(self.recharge_mean.index, self.recharge_mean, yerr=2*self.recharge_std, color=[120/255.,196./255,1.], width = -250, lw=0, error_kw={'ecolor': 'dimgray', 'ewidth': '5'})
+            return plt.bar(df.index, df.quantile(q=0.5, axis=1), yerr=[(df.quantile(q=0.5, axis=1)-df.quantile(q=0.025, axis=1)),(df.quantile(q=0.975, axis=1)-df.quantile(q=0.5, axis=1))], color=[120/255.,196./255,1.], width = -250, lw=0, error_kw={'ecolor': 'dimgray', 'ewidth': '5'})
 
 #%% Estimate Sumax     
     def calcSumax(self, Cr=0.40, imax=0.001, T=20, fc=1.0, EaMethod='gradual'):
@@ -492,6 +546,33 @@ def latex_plot():
               'axes.edgecolor': 'lightgray',
               'axes.facecolor': 'white',
               'axes.labelcolor': 'dimgray',
+    }
+    return plt.rcParams.update(params)
+
+def presentation_plot():
+    #from matplotlib import rcParams
+    params = {'backend': 'ps',
+              #'text.latex.preamble': ['\usepackage{amsmath}','\usepackage[utf8]{inputenc}'],
+              #'text.latex.unicode': True,
+              'axes.labelsize': 10, 
+              'axes.titlesize': 10,
+              'font.size': 10, 
+              'font.family': 'serif',
+              #'font.serif': 'Bookman',
+              'legend.fontsize': 10,
+              'legend.scatterpoints': 3,
+              'xtick.labelsize': 10,
+              'xtick.color': 'k',     
+              'ytick.labelsize': 10,
+              'ytick.color': 'k',              
+              #'text.usetex': 0,
+              #'text.dvipnghack' : True,
+              'figure.figsize': [8.29,5],
+              'figure.dpi': 300,
+              'figure.facecolor' : 'white',
+              'axes.edgecolor': 'k',
+              'axes.facecolor': 'white',
+              'axes.labelcolor': 'k',
     }
     return plt.rcParams.update(params)
 

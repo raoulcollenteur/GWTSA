@@ -21,42 +21,42 @@ latex_plot()
 
 #%% Plot the impulse response function
 X0 = Parameters()
-X0.add_many(('A',   3.0,    True,   None, None,  None),
-           ('a',    2.48,    True,   None, None,  None),
-           ('b',    0,    True,   None, None,  None),
+X0.add_many(('A',   0.3,    True,   None, None,  None),
+           ('a',    200,    True,   None, None,  None),
+           ('b',    0.0,    True,   None, None,  None),
            ('n',    1.5,    True,   None, None,  None))
 x1 = TFN_Model.IRF(X0)
 
 X0 = Parameters()
-X0.add_many(('A',   3.0,    True,   None, None,  None),
-           ('a',    2.48,    True,   None, None,  None),
+X0.add_many(('A',   2e-4,    True,   None, None,  None),
+           ('a',    200,    True,   None, None,  None),
            ('b',    0.0,    True,   None, None,  None),
            ('n',    3.0,    True,   None, None,  None))
 x2 = TFN_Model.IRF(X0)
 
 X0 = Parameters()
-X0.add_many(('A',   2.7,    True,   None, None,  None),
-           ('a',    2.0,    True,   None, None,  None),
+X0.add_many(('A',   0.3,    True,   None, None,  None),
+           ('a',    300,    True,   None, None,  None),
            ('b',    0.0,    True,   None, None,  None),
            ('n',    1.5,    True,   None, None,  None))
 x3 = TFN_Model.IRF(X0)
 
 X0 = Parameters()
 X0.add_many(('A',   3.0,    True,   None, None, None),
-           ('a',    2.48,    True,   None, None,  None),
+           ('a',    200,    True,   None, None,  None),
            ('b',    2.5,    True,   None, None,  None),
            ('n',    1.0,    True,   None, None,  None))
 
 x4 = TFN_Model.IRF(X0)
 
-
 plt.figure(figsize=(4.15,3))    
-plt.plot(x1, '-', color=cyan, label='A=1000, a=300, n=1.5')
-plt.plot(x2, '--', color=cyan, label='A=1000, a=300, n=3.0')
-plt.plot(x3, 'k-', label='A=500, a=100, n=1.5')
-plt.plot(x4, 'k--', label='A=1000, a=300, n=1.0')
+plt.plot(x1, '-', color=cyan, label='A=0.3, a=200, n=1.5')
+plt.plot(x2, '--', color=cyan, label='A=2e-4, a=200, n=3.0')
+plt.plot(x3, 'k-', label='A=0.3, a=300, n=1.5')
+plt.plot(x4, 'k--', label='A=3.0, a=200, n=1.0')
 
 plt.xlim(0,1500)
+plt.ylim(0,3.5)
 plt.legend()
 plt.xlabel('Time [Days]')
 plt.ylabel('Response [-]')
@@ -103,8 +103,8 @@ plt.legend(['Recharge', 'UZ'])
 
 data = read_csv('Test_Data/KNMI_Bilt.txt', skipinitialspace=True, skiprows=11, delimiter=',', parse_dates=['YYYYMMDD'], index_col=['YYYYMMDD'])
 
-data.RH = data.RH/10.
-data.EV24 = data.EV24/10.
+data.RH = data.RH/10000.
+data.EV24 = data.EV24/10000.
 
 P_avg = data.RH.resample('A', how='sum', kind='YYYYMMDD')
 P_avg = P_avg[(P_avg.index>1958) & (P_avg.index<2015)]
@@ -116,22 +116,37 @@ P_mean = P_avg.mean()
 E_mean = E_avg.mean()
 R_mean = R_avg.mean()
 
-plt.figure(figsize=(8.3,3))
+presentation_plot()
+plt.figure(figsize=(8.3,4))
 
 plt.subplot(211)
-ax = P_avg.plot(kind='bar', color=cyan, label='Precipitation')
-plt.ylabel(r'$P$ [mm/year]')
-plt.legend(loc=4)
-ax.grid(False)
+P = data[(data.index > '1997-01-01') & (data.index < '2005-01-01')]
+plt.bar(P.index, P.RH, color='k', label='Precipitation')
+
+#ax = P_avg.plot(kind='bar', color=cyan, label='Precipitation')
+plt.ylabel(r'$P$ [m/d]')
+plt.ylim(-0.005,0.05)
+plt.legend(loc='best')
+#ax.grid(False)
 
 plt.subplot(212)
-ax1 = E_avg.plot(kind='bar', color='lightcoral', label='Evapotranspiration')
-plt.ylabel(r'$E_p$ [mm/year]')
+plt.bar(P.index, P.EV24,color='k', label='Evaporation')
+#ax1 = E_avg.plot(kind='bar', color='lightcoral', label='Evapotranspiration')
+plt.ylabel(r'$E_p$ [m/d]')
 plt.xlabel('Time [years]')
-ax1.grid(False)
-plt.legend(loc=4)
+plt.ylim(-0.005,0.05)
+#ax1.grid(False)
+plt.legend(loc='best')
 plt.savefig('Figures/climate_deelen.eps', bbox_inches='tight')
 
+from pandas.stats.moments import rolling_mean
+
+b = bore[1]
+b['E']=rolling_mean(data.EV24, 3650)
+b['P']=rolling_mean(data.RH, 3650)
+b['R']=b.P-b.E
+b.corr()
+b[b.index<'2005-09-23 00:00:00'].corr()
 #%% Plot the boreholes used in this study
 
 #bores = glob.glob('Test_Data/*.csv')
@@ -149,7 +164,7 @@ for i in range(len(bores)):
     bore[i].h = bore[i].h/100.
     #bore[i].h = bore[i].h-bore[i].h.mean()
     #bore[i].h.plot()
-    bore[i] = bore[i][(bore[i].index > '1975-01-01 00:00:00') & (bore[i].index < '2005-01-01 00:00:00')]
+    bore[i] = bore[i][(bore[i].index > '1958-01-01 00:00:00') & (bore[i].index < '2005-01-01 00:00:00')]
     peak.append(bore[i].h[(bore[i].index > '1975-01-01 00:00:00') & (bore[i].index < '1980-01-01 00:00:00')].argmax())
     bores[i] = bores[i][-17:-8]
     
@@ -161,6 +176,48 @@ plt.xlabel('Time [Years]')
 plt.ylabel('GWL [m]')
 plt.legend(loc=(0,1), ncol=3, frameon=False, handlelength=3)
 plt.savefig('Figures/boreholes_plot.eps', bbox_inches='tight') 
+ 
+#%% 
+from pandas.stats.moments import rolling_mean 
+ 
+b = bore[0]
+dt=5
+b['E']=rolling_mean(data.EV24, dt*365)
+b['P']=rolling_mean(data.RH, dt*365)
+b['R']=b.P-b.E
+print b.corr().iloc[0]
+label = []
+period = range(1970,2006,1)
+cor =[0,0,0,0]
+for i in range(len(period)-dt):
+    label = np.append(label,'%s-%s' %(period[i], period[i+dt]))
+    cor = np.vstack((cor, b[(b.index>'%s' %period[i]) & (b.index<'%s' %period[i+dt])].corr().iloc[0]))
+
+latex_plot()
+plt.figure(figsize=(4.15,3.0))
+plt.plot(period[0:-dt],cor[1:,1], 'k-o', label='Evaporation')
+plt.plot(period[0:-dt],cor[1:,2], 'k', label='Precipitation')
+plt.plot(period[0:-dt],cor[1:,3], 'k--', label='Recharge')
+plt.xticks(period[0::5],label[0::5], rotation=0)
+plt.ylabel('Correlation')
+plt.xlabel('Period [years]')
+plt.xlim(1970,2000) 
+plt.legend(loc=0)
+plt.savefig('Figures/correlation.eps', bbox_inches='tight')
+
+latex_plot()
+plt.figure(figsize=(4.15,3.0))
+plt.subplot(211)
+ax = (b.R[b.index>'1967-07-20 00:00:00']*1000).plot(color='k')
+ax.set_xticklabels([])
+plt.ylabel('Recharge [mm/d]')
+plt.subplot(212)
+b.h[b.index>'1967-07-20 00:00:00'].plot(color='k')
+plt.ylabel('Head [m]')
+plt.xlabel('Time [years]')
+plt.savefig('Figures/mov_avg_10yr_recharge.eps', bbox_inches='tight') 
+
+plt.plot(b.R, b.h)
  
 #%% Plot of the thickness of the unsaturated zone against the T_peak
 
@@ -293,4 +350,58 @@ plt.savefig('Figures/IRF_Peak.eps', bbox_inches='tight')
 
 
 #%% moving averages plots
-df20 = pd.rolling_mean(df.resample("1D", fill_method="ffill"), window=20*365, min_periods=1)
+from pandas.stats.api import ols
+
+df = bore[0]
+df1 = bore[1]
+df2 = bore[2]
+
+df['date'] = df.index.to_datetime() 
+df['date_delta'] = (df['date'] - df['date'].min())  / np.timedelta64(1,'D')
+res = ols(y=df.h, x=df.date_delta)
+
+print res
+print res.summary_as_matrix
+plt.figure(figsize=(8.3,2))
+res.y.plot(color='k', label='B27D00010')
+res.y_fitted.plot(color='k', label='linear_fit')
+
+
+df1['date'] = df1.index.to_datetime() 
+df1['date_delta'] = (df1['date'] - df1['date'].min())  / np.timedelta64(1,'D')
+res = ols(y=df1.h, x=df1.date_delta)
+
+print res
+print res.summary_as_matrix
+res.y.plot(color='gray', label='B27C00490')
+res.y_fitted.plot(color='gray', label='linear_fit')
+
+
+df2['date'] = df2.index.to_datetime() 
+df2['date_delta'] = (df2['date'] - df2['date'].min())  / np.timedelta64(1,'D')
+res = ols(y=df2.h, x=df2.date_delta)
+print res
+print res.summary_as_matrix
+
+res.y.plot(color=cyan, label='B33A01130')
+res.y_fitted.plot(color=cyan, label='linear_fit')
+
+plt.xlabel('Time [Years]')
+plt.ylabel('GWL [m]')
+plt.legend(loc=(0,1), ncol=3, frameon=False, handlelength=3)
+
+plt.savefig('Figures/linear_trend.eps', bbox_inches='tight')
+
+#%% Plot the discharges
+
+data = read_csv('Test_Data/Discharge_Tongeren.csv', delimiter=';', index_col=0, parse_dates=True)
+
+ax = data.plot(kind='bar', color='k', figsize=(8.3,2.0))
+plt.ylabel('Discharge M $m^3$/year')
+plt.xlabel('Year')
+label = ax.get_xticklabels()
+xticks = ax.get_xticks()
+ax.set_xticks(xticks[0::5])
+ax.set_xticklabels(range(1958,2012,5))
+plt.legend(['Discharge B27C0049'])
+plt.savefig('Figures/Discharge_Tongeren.eps', bbox_inches='tight')
