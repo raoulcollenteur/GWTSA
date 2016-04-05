@@ -6,8 +6,6 @@ Created on Thu Aug 27 10:45:17 2015
 
 Notes To self:
 --------------------------------
-
-
 """
 import numpy as np
 import matplotlib.dates as md
@@ -112,11 +110,13 @@ class Model:
         """
         fig2 = plt.figure('Boreholes')
         colors=plt.cm.nipy_spectral(np.linspace(0,1,self.bores_number))
+        ls = ['-','--','-','-']
+        marker = ['','','d','s']
         if self.bores_number>1: colors[1] = [0.47058823529411764, 0.7686274509803922, 1.0, 1.0] #Add cyan TUDelft color
         for i in range(self.bores_number):
-            plt.plot(md.num2date(self.bores_list[i]._time_axis), self.bores_list[i].head_observed,'.', markersize=2, c=colors[i], label='%s observed' %self.bores_list[i].bore)
+            plt.plot(md.num2date(self.bores_list[i]._time_axis), self.bores_list[i].head_observed,'.', markersize=2, c='k', label='%s observed' %self.bores_list[i].bore)
             if modeled == 1:            
-                plt.plot(md.num2date(np.arange(self.bores_list[i]._time_begin, self.bores_list[i]._time_end+1)), self.bores_list[i].head_modeled, c=colors[i], label='%s, %s' %(self.bores_list[i].bore, self.bores_list[i]._RM), linestyle='-') 
+                plt.plot(md.num2date(np.arange(self.bores_list[i]._time_begin, self.bores_list[i]._time_end+1)), self.bores_list[i].head_modeled, c='k', linestyle=ls[i], marker=marker[i], label='%s, %s' %(self.bores_list[i].bore, self.bores_list[i]._RM)) 
         plt.ylabel('Groundwater head [m]')
         plt.xlabel('Time [Years]')
         plt.legend(loc=(0,1), ncol=3, frameon=False, handlelength=3)
@@ -240,6 +240,7 @@ class TimeSeries:
         self.RM = eval(RM)      # Save the recharge calculation function
         self._TFN = IR          # Save the name of the impulse response function
         self._RM = RM           # Save the name of the recharge model
+        self._Trend = trend
 
         InputData = [self._time_model, self.precipitation, self.evaporation,
                      solver, IR, RM, trend]
@@ -250,13 +251,13 @@ class TimeSeries:
         
         if method == 'leastsq':
             X0.add('d', value=np.mean(self.head_observed), vary=True)
-            if trend=='reclamation': X0.add('t_start', value=(md.datestr2num('01-01-1975') - md.date2num(self._time_climate[0])), vary=False)
+            if trend=='reclamation': X0.add('t_start', value=(md.datestr2num('01-01-1967') - md.date2num(self._time_climate[0])), vary=False)
             self.result = minimize(self.objective_function, X0, args=(InputData,), method='leastsq', scale_covar=True)
             self.parameters_optimized = self.result.params.valuesdict()
             if self.result.success: 
                 print 'Optimization completed succesfully!'
                 print(report_fit(self.result))
-                np.savetxt('Figures/fit_report_%s_%s.txt' % (self.bore, self._TFN), (fit_report(self.result),), fmt='%str')
+                np.savetxt('Figures/fit_report_%s_%s.txt' % (self.bore, self._RM), (fit_report(self.result),), fmt='%str')
         else:
             X0.add('d', value=np.mean(self.head_observed))
             self.result = minimize(self.objective_function, X0,
@@ -335,7 +336,7 @@ class TimeSeries:
         plt.plot(md.num2date(np.arange(self._time_begin, self._time_end+1)), 
                  self.head_modeled, '-', color=cyan, label='modeled head')
         try:
-            plt.plot(md.num2date(np.arange(self._time_begin, self._time_end+1)),self.trend+np.mean(self.head_observed))  
+            plt.plot(md.num2date(np.arange(self._time_begin, self._time_end+1)),self.trend+np.mean(self.head_observed), color='gray', linestyle='--', label='%s trend' %self._Trend)  
         except:
             pass
         #std = np.std(self.residuals)
@@ -448,7 +449,7 @@ class TimeSeries:
         ax4.table(cellText=text, colLabels=colLabels, loc='center', fontsize=4)   
 
         if savefig:
-            plt.savefig('Figures/%s_%s_diagnostics.eps' %(self.bore,self._TFN), format='eps', bbox_inches='tight')                
+            plt.savefig('Figures/%s_%s_diagnostics.eps' %(self.bore,self._RM), format='eps', bbox_inches='tight')                
 
 #%% Plot the recharge
     def recharge_uncertainty(self, n=1000, fig=1):
@@ -535,15 +536,15 @@ def latex_plot():
               'legend.fontsize': 8,
               'legend.scatterpoints': 3,
               'xtick.labelsize': 6,
-              'xtick.color': 'gray',     
+              'xtick.color': 'dimgray',     
               'ytick.labelsize': 6,
-              'ytick.color': 'gray',              
+              'ytick.color': 'dimgray',              
               #'text.usetex': 0,
               #'text.dvipnghack' : True,
               'figure.figsize': [8.29,5],
               'figure.dpi': 300,
               'figure.facecolor' : 'white',
-              'axes.edgecolor': 'lightgray',
+              'axes.edgecolor': 'gray',
               'axes.facecolor': 'white',
               'axes.labelcolor': 'dimgray',
     }

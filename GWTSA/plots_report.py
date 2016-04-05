@@ -101,43 +101,48 @@ plt.legend(['Recharge', 'UZ'])
 
 #%% Plot the precipitation and evapotranspiration
 
-data = read_csv('Test_Data/KNMI_Bilt.txt', skipinitialspace=True, skiprows=11, delimiter=',', parse_dates=['YYYYMMDD'], index_col=['YYYYMMDD'])
+data = read_csv('Test_Data/KNMI_Oldebroek.txt', skipinitialspace=True, skiprows=4, delimiter=',', parse_dates=['YYYYMMDD'], index_col=['YYYYMMDD'])
 
 data.RH = data.RH/10000.
 data.EV24 = data.EV24/10000.
 
-P_avg = data.RH.resample('A', how='sum', kind='YYYYMMDD')
-P_avg = P_avg[(P_avg.index>1958) & (P_avg.index<2015)]
-E_avg = data.EV24.resample('A', how='sum', kind='YYYYMMDD')
-E_avg = E_avg[(E_avg.index>1958) & (E_avg.index<2015)]
+P_avg = data.RH.resample('A', how='sum')
+P_avg = P_avg[(P_avg.index>'1958') & (P_avg.index<'2005')]
+E_avg = data.EV24.resample('A', how='sum')
+E_avg = E_avg[(E_avg.index>'1958') & (E_avg.index<'2005')]
 R_avg = P_avg - E_avg
 
 P_mean = P_avg.mean()
 E_mean = E_avg.mean()
 R_mean = R_avg.mean()
 
-presentation_plot()
-plt.figure(figsize=(8.3,4))
+plt.figure(figsize=(8.3,1.5))
 
-plt.subplot(211)
-P = data[(data.index > '1997-01-01') & (data.index < '2005-01-01')]
-plt.bar(P.index, P.RH, color='k', label='Precipitation')
+#plt.subplot(211)
+plt.suptitle('Bilt')
+#P = data[(data.index > '1997-01-01') & (data.index < '2005-01-01')]
+#plt.bar(P.index, P.RH, color='k', label='Precipitation')
 
-#ax = P_avg.plot(kind='bar', color=cyan, label='Precipitation')
-plt.ylabel(r'$P$ [m/d]')
-plt.ylim(-0.005,0.05)
-plt.legend(loc='best')
-#ax.grid(False)
+#ax = P_avg.plot(kind='bar', color=cyan, label='Precipitation', xticks=None, linewidth=0)
+plt.ylabel(r'$P$ [m/year]')
+#plt.ylim(-0.005,0.05)
+plt.legend(loc=4)
+#ax.xaxis.set_visible(False) 
 
-plt.subplot(212)
-plt.bar(P.index, P.EV24,color='k', label='Evaporation')
-#ax1 = E_avg.plot(kind='bar', color='lightcoral', label='Evapotranspiration')
-plt.ylabel(r'$E_p$ [m/d]')
+#plt.subplot(212)
+##plt.bar(P.index, P.EV24,color='k', label='Evaporation')
+ax = E_avg.plot(kind='bar', color='lightcoral', label='Potential Evaporation', linewidth=0)
+plt.ylabel(r'$E_p$ [m/year]')
 plt.xlabel('Time [years]')
-plt.ylim(-0.005,0.05)
-#ax1.grid(False)
-plt.legend(loc='best')
-plt.savefig('Figures/climate_deelen.eps', bbox_inches='tight')
+##plt.ylim(-0.005,0.05)
+##ax1.grid(False)
+plt.legend(loc=4)
+label = ax.get_xticklabels()
+xticks = ax.get_xticks()
+ax.set_xticks(xticks[0::5])
+ax.set_xticklabels(range(1958,2012,5))
+
+plt.savefig('Figures/climate_bilt.eps', bbox_inches='tight')
 
 from pandas.stats.moments import rolling_mean
 
@@ -164,17 +169,17 @@ for i in range(len(bores)):
     bore[i].h = bore[i].h/100.
     #bore[i].h = bore[i].h-bore[i].h.mean()
     #bore[i].h.plot()
-    bore[i] = bore[i][(bore[i].index > '1958-01-01 00:00:00') & (bore[i].index < '2005-01-01 00:00:00')]
-    peak.append(bore[i].h[(bore[i].index > '1975-01-01 00:00:00') & (bore[i].index < '1980-01-01 00:00:00')].argmax())
+    bore[i] = bore[i][(bore[i].index > '1974-01-01 00:00:00') & (bore[i].index < '2005-01-01 00:00:00')]
+    peak.append(bore[i].h[(bore[i].index > '1974-01-01 00:00:00') & (bore[i].index < '1980-01-01 00:00:00')].argmax())
     bores[i] = bores[i][-17:-8]
     
 plt.figure(figsize=(8.3,2))
-plt.plot(bore[0].index, bore[0].h, linestyle='-', color='k', label='B27D00010')
-plt.plot(bore[1].index, bore[1].h, linestyle='--', color='k', label='B27C00490')
-plt.plot(bore[2].index, bore[2].h, linestyle='-', color=cyan, label='B33A01130')
+plt.plot(bore[0].index, bore[0].h, '.',markersize=2, color='k', label='B27D00010')
+#plt.plot(bore[1].index, bore[1].h, linestyle='-', color='gray', label='B27C00490')
+#plt.plot(bore[2].index, bore[2].h, linestyle='-', color=cyan, label='B33A01130')
 plt.xlabel('Time [Years]')
-plt.ylabel('GWL [m]')
-plt.legend(loc=(0,1), ncol=3, frameon=False, handlelength=3)
+plt.ylabel('Head [m]')
+#plt.legend(loc=(0,1), ncol=3, frameon=False, handlelength=3)
 plt.savefig('Figures/boreholes_plot.eps', bbox_inches='tight') 
  
 #%% 
@@ -394,14 +399,109 @@ plt.savefig('Figures/linear_trend.eps', bbox_inches='tight')
 
 #%% Plot the discharges
 
-data = read_csv('Test_Data/Discharge_Tongeren.csv', delimiter=';', index_col=0, parse_dates=True)
+data = read_csv('Test_Data/Discharge_Epe.csv', delimiter=';', index_col=0, parse_dates=True, names=['Epe'])
+data['Haere'] = read_csv('Test_Data/Discharge_Haere.csv', delimiter=';', index_col=0, parse_dates=True)
 
-ax = data.plot(kind='bar', color='k', figsize=(8.3,2.0))
-plt.ylabel('Discharge M $m^3$/year')
+ax=data.plot(x=data.index.year,kind='bar', color='k', sharex=True, figsize=(8.3,4.0), subplots=True, xticks=range(1958,2012,5), ylim=(0,6), legend=False)
+ax[0].set_ylabel('Discharge $10^6$  m$^3$/year')
+ax[1].set_ylabel('Discharge $10^6$  m$^3$/year')
 plt.xlabel('Year')
-label = ax.get_xticklabels()
-xticks = ax.get_xticks()
-ax.set_xticks(xticks[0::5])
-ax.set_xticklabels(range(1958,2012,5))
-plt.legend(['Discharge B27C0049'])
-plt.savefig('Figures/Discharge_Tongeren.eps', bbox_inches='tight')
+#label = ax.get_xticklabels()
+#xticks = ax.get_xticks()
+#ax.set_xticks(xticks[0::5])
+#ax.set_xticklabels(range(1958,2012,5))
+plt.savefig('Figures/Discharge_Apeldoorn.eps', bbox_inches='tight')
+
+#%%
+
+# First start with the input parameters
+
+t = np.arange(1,3000.,1)
+A = 0.5
+a = 200
+n = 1.5
+
+# Create the impulse response curve
+Fi = A * (t ** (n-1)) * np.exp(-t/a)
+
+# Create the step response curve
+Fs = A * t**n * (t/a)**-n * gammainc(n, t/a)
+
+# Create the block response curve
+Fb = Fs[1:] - Fs[0:-1]
+Fb = np.append(0, Fb) #This is only done for drawing the graph as you normally
+# Convolute 
+
+plt.figure(figsize=(8.3,4))
+plt.subplot(321)
+plt.bar([0],[1],width=0.1, color='gray')
+plt.xlim(-1,8)
+plt.ylim(0,1.2)
+plt.yticks([1],['$\infty$'])
+plt.ylabel('Recharge [L/T]')
+plt.subplot(322)
+plt.plot(t,Fi, 'k')
+plt.ylabel('Response [-]')
+plt.xlim(0,1500)
+
+
+plt.subplot(323)
+plt.bar([0],[1],width=8, color='gray')
+plt.ylim(0,1.2)
+plt.xlim(-1,8)
+plt.xticks([0, 8],[0, '$\infty$'])
+plt.ylabel('Recharge [L/T]')
+plt.subplot(324)
+plt.plot(np.arange(len(Fs)),Fs, 'k')
+plt.ylabel('Response [T]')
+plt.xlim(0,1500)
+
+
+plt.subplot(325)
+plt.bar([0],[1],width=1, color='gray')
+plt.ylim(0,1.2)
+plt.xlim(-1,8)
+plt.ylabel('Recharge [L/T]')
+plt.xlabel(' Time [T]')
+plt.subplot(326)
+plt.plot(np.arange(len(Fb)),Fb, 'k')
+plt.ylabel('Response [T]')
+plt.xlim(0,1500)
+plt.xlabel(' Time [T]')
+
+plt.savefig('Figures/responses.eps', bbox_inches='tight')
+
+
+#%% Plot the impulse response function
+mu = 208.42
+sig= 169.85           
+Fs1 = norm.cdf(range(1000), mu, sig) #/norm.pdf(mu,mu,sig)
+Fb1 = Fs1[1:] - Fs1[0:-1] #block reponse function
+
+mu = 160.41
+sig= 148.20        
+Fs2 = norm.cdf(range(1000), mu, sig) #/norm.pdf(mu,mu,sig)
+Fb2 = Fs2[1:] - Fs2[0:-1] #block reponse function
+
+mu = 167.63
+sig= 147.34          
+Fs3 = norm.cdf(range(1000), mu, sig) #/norm.pdf(mu,mu,sig)
+Fb3 = Fs3[1:] - Fs3[0:-1] #block reponse function
+
+mu = 133.99
+sig= 110.26       
+Fs4 = norm.cdf(range(1000), mu, sig) #/norm.pdf(mu,mu,sig)
+Fb4 = Fs4[1:] - Fs4[0:-1] #block reponse function
+
+plt.figure(figsize=(4.15,3))    
+plt.plot(Fb1, '-', color='r', label='Linear')
+plt.plot(Fb2, '-', color=cyan, label='Preferential')
+plt.plot(Fb3, '-', color='gray', label='Percolation')
+plt.plot(Fb4, 'k-', label='Combination')
+
+#plt.xlim(0,1500)
+#plt.ylim(0,1.1)
+plt.legend(loc='best')
+plt.xlabel('Time [Days]')
+plt.ylabel('Response [-]')
+plt.savefig('Figures/block_response.eps', bbox_inches='tight')

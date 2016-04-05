@@ -1,0 +1,24 @@
+[[Fit Statistics]]
+    # function evals   = 8640
+    # data points      = 460
+    # variables        = 12
+    chi-square         = 0.001
+    reduced chi-square = 0.000
+[[Variables]]
+    A:         3.53865837 +/- 0        (0.00%) (init= 3)
+    a:         1410.63413 +/- 0        (0.00%) (init= 200)
+    n:         1 (fixed)
+    alpha:     376.778876 +/- 0        (0.00%) (init= 100)
+    f:         1          +/- 0        (0.00%) (init= 1)
+    mu:        137.815132 +/- 0        (0.00%) (init= 15)
+    sig:       89.2023534 +/- 0        (0.00%) (init= 25)
+    Srmax:     0.262 (fixed)
+    Imax:      0.0015 (fixed)
+    Kp:        0.00010005 +/- 0        (0.00%) (init= 0.005)
+    Beta:      5.14364399 +/- 0        (0.00%) (init= 3)
+    gamma:     32.1961547 +/- 0        (0.00%) (init= 3)
+    b:         3.75226948 +/- 0        (0.00%) (init= 4)
+    B:        -0.99999999 +/- 0        (0.00%) (init=-0.5)
+    d:         23.8367219 +/- 0        (0.00%) (init= 28.12071)
+    t_start:   3471 (fixed)
+[[Correlations]] (unreported correlations are <  0.100)tr

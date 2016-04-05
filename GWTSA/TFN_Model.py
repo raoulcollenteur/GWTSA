@@ -24,7 +24,7 @@ def construct_model(parameters, InputData):
     
     recharge = RechargeModel(parameters, InputData) #Simulate the recharge series    
     
-    #recharge = IRF2(parameters, recharge) # Used when percolation is transformed!
+    recharge = IRF2(parameters, recharge) # Used when percolation is transformed!
     
     Fb = ImpulseResponse(parameters) #block reponse function
     head_modeled = (d + fftconvolve(recharge,Fb))[time_model] 
@@ -182,11 +182,11 @@ def reclamation(parameters, InputData):
     return Fb    
         
 def well(parameters, InputData):
-    B = parameters['B'].value
-    b = parameters['b'].value
+    v = parameters['v'].value
+    u = parameters['u'].value
     time_model = InputData[0]
     Discharge = InputData[7]
-    Fi = Fi = B/time_model[1:] * np.exp(-b/time_model[1:])
+    Fi = Fi = v/time_model[1:] * np.exp(-u/time_model[1:])
     Fs = np.cumsum(Fi)
     Fb = np.append(0, Fs[1:] - Fs[0:-1])
     drawdown = fftconvolve(Discharge, Fb)[time_model] 
